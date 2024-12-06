@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FOSS Club - Building the Future with Open Source</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css">
+    <link rel="stylesheet" href="Foss2.css">
+</head>
+<body>
+    <nav id="navbar" class="navbar">
+        <div class="nav-content">
+            <div class="logo">
+                <img src="amc-foss-logo.png" alt="FOSS Logo" class="nav-logo">
+                <span>FOSS Club</span>
+            </div>
+            <div id="navToggle" class="nav-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#home" class="active">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#events">Events</a></li>
+                <li><a href="#projects">Projects</a></li>
+                <li><a href="#team">Team</a></li>
+                <li><a href="#contact">Contact</a></li>
+                <li><button class="join-btn">Join Us</button></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section id="home" class="section hero">
+        <div class="hero-content" data-aos="fade-up">
+            <h1 class="glitch" data-text="#BuildWithFOSS">#BuildWithFOSS</h1>
+            <h2 class="typewriter">Where Innovation Meets Open Source</h2>
+            <p class="hero-description">Join us in building the future of technology through collaboration and open-source development</p>
+            <div class="hero-buttons">
+                <a href="#" class="btn primary-btn">Get Started</a>
+                <a href="#" class="btn secondary-btn">Learn More</a>
+            </div>
+        </div>
+        <div class="hero-overlay"></div>
+        <div id="particles-js" class="hero-particles"></div>
+        <div class="scroll-indicator">
+            <span class="mouse">
+                <span class="wheel"></span>
+            </span>
+            <p>Scroll Down</p>
+        </div>
+    </section>
+
+    <section id="about" class="section about">
+        <div class="section-content">
+            <h2 class="section-title" data-aos="fade-up">About Our Club</h2>
+            <div class="about-grid">
+                <div class="about-card" data-aos="fade-right">
+                    <i class="fas fa-code"></i>
+                    <h3>Open Source Development</h3>
+                    <p>Learn and contribute to real-world open source projects</p>
+                </div>
+                <div class="about-card" data-aos="fade-up">
+                    <i class="fas fa-users"></i>
+                    <h3>Community</h3>
+                    <p>Join a vibrant community of developers and enthusiasts</p>
+                </div>
+                <div class="about-card" data-aos="fade-left">
+                    <i class="fas fa-laptop-code"></i>
+                    <h3>Workshops</h3>
+                    <p>Regular workshops on latest technologies and tools</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="events" class="section events">
+        <div class="section-content">
+            <h2 class="section-title" data-aos="fade-up">Upcoming Events</h2>
+            <div class="events-grid">
+                <div class="event-card" data-aos="fade-up">
+                    <div class="event-date">
+                        <span class="day">15</span>
+                        <span class="month">DEC</span>
+                    </div>
+                    <div class="event-details">
+                        <h3>FOSS Hackathon 2024</h3>
+                        <p>48-hour coding challenge</p>
+                        <div id="countdown-1" class="countdown"></div>
+                        <button class="primary-btn">Register Now</button>
+                    </div>
+                </div>
+                <div class="event-card" data-aos="fade-up">
+                    <div class="event-date">
+                        <span class="day">25</span>
+                        <span class="month">DEC</span>
+                    </div>
+                    <div class="event-details">
+                        <h3>Open Source Fiesta</h3>
+                        <p>A celebration of open-source technologies and communities</p>
+                        <div id="countdown-2" class="countdown"></div>
+                        <button class="primary-btn">Learn More</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="projects" class="section projects">
+        <div class="section-content">
+            <h2 class="section-title" data-aos="fade-up">Our Projects</h2>
+            <div class="projects-grid">
+                <!-- Add a featured project with more details -->
+                <div class="project-card featured" data-aos="fade-up">
+                    <img src="https://mars-images.imgix.net/seobot/osssoftware.org/65a1c64780fd6a912cffdb41-28202c73b8cd98f80c118a2059313b9b.png?auto=compress" alt="Featured Project" loading="lazy">
+                    <div class="project-info">
+                        <h3>Featured: Open Source Collaboration Platform</h3>
+                        <p>A cutting-edge platform designed to streamline open source contributions and foster community collaboration.</p>
+                        <div class="project-tech">
+                            <span>React</span>
+                            <span>Node.js</span>
+                            <span>GraphQL</span>
+                        </div>
+                        <div class="project-links">
+                            <a href="#" class="github-link">View on GitHub</a>
+                            <a href="#" class="demo-link">Live Demo</a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Add more project cards here -->
+            </div>
+        </div>
+    </section>
+
+    <section id="team" class="section team">
+        <div class="section-content">
+          <h2 class="section-title">Meet Our Team</h2>
+          <div class="team-carousel">
+            <div class="team-member active">
+              <img src="/api/placeholder/150/150" alt="Shashanky" class="member-photo">
+              <h3>Shashanky</h3>
+              <p>President</p>
+              <a href="https://instagram.com/Shashank_y_4.5" class="instagram-link" target="_blank">@Shashank_y_4.5</a>
+            </div>
+            <div class="team-member">
+              <img src="/api/placeholder/150/150" alt="Jane Smith" class="member-photo">
+              <h3>Jane Smith</h3>
+              <p>Vice President</p>
+              <a href="https://instagram.com/janesmith" class="instagram-link" target="_blank">@janesmith</a>
+            </div>
+            <div class="team-member">
+              <img src="/api/placeholder/150/150" alt="Pravin Dharsaun" class="member-photo">
+              <h3>Pravin Dharsaun</h3>
+              <p>Coordinator</p>
+              <a href="https://instagram.com/boii__loather" class="instagram-link" target="_blank">@boii__loather</a>
+            </div>
+          </div>
+          <div class="carousel-nav-dots"></div>
+        </div>
+      </section>
+
+    <section id="contact" class="section contact">
+        <div class="section-content">
+            <h2 class="section-title" data-aos="fade-up">Get In Touch</h2>
+            <div class="contact-container">
+                <div class="contact-info" data-aos="fade-right">
+                    <div class="info-item">
+                        <i class="fas fa-envelope"></i>
+                        <p>amcfoss@gmail.com</p>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <p>Amrita Vishwa Vidyapeetham, Chennai Campus</p>
+                    </div>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="https://discord.gg/4vsg5Fpw"><i class="fab fa-discord"></i></a>
+                        <a href="https://instagram.com/amcfoss"><i class="fab fa-instagram"></i></a>
+                        <a href="https://linkedin.com/company/amcfoss"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+                <form class="contact-form" data-aos="fade-left">
+                    <input type="text" placeholder="Your Name" required>
+                    <input type="email" placeholder="Your Email" required>
+                    <textarea placeholder="Your Message" required></textarea>
+                    <button type="submit" class="primary-btn">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>FOSS Club</h3>
+                <p>Building the future with open source</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#events">Events</a></li>
+                    <li><a href="#projects">Projects</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Newsletter</h3>
+                <form class="newsletter-form">
+                    <input type="email" placeholder="Your email" required>
+                    <button type="submit">Subscribe</button>
+                </form>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 FOSS Club. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+    <script src="Foss2.js"></script>
+</body>
+</html>
