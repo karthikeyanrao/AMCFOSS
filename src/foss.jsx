@@ -120,8 +120,8 @@ const FossApp = () => {
     if (!user) {
       setIsAuthModalOpen(true);
     } else {
-      // TODO: Open event registration modal
-      alert('Event registration modal will open here');
+      // Open event registration modal
+      setIsEventRegistrationOpen(true);
     }
   };
 
