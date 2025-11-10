@@ -8,6 +8,7 @@ import AuthModal from "./components/AuthModal";
 import AuthButton from "./components/AuthButton";
 import DashboardModal from "./components/DashboardModal";
 import { EventsGrid } from "./components/EventCard";
+import { useAuth } from "./context/AuthContext";
 
 const FossApp = () => {
   // State management
