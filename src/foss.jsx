@@ -478,32 +478,7 @@ const FossApp = () => {
       <section id="events" className="section events">
         <div className="section-content">
           <h2 className="section-title" data-aos="fade-up">Upcoming Events</h2>
-          <div className="events-grid">
-            <div className="event-card" data-aos="fade-up">
-              <div className="event-date">
-                <span className="day">29</span>
-                <span className="month">JAN</span>
-              </div>
-              <div className="event-details">
-                <h3>FOSS Hackathon 2024</h3>
-                <p>48-hour coding challenge</p>
-                <div className="countdown">{countdown1}</div>
-                <button className="primary-btn">Register Now</button>
-              </div>
-            </div>
-            <div className="event-card" data-aos="fade-up">
-              <div className="event-date">
-                <span className="day">30</span>
-                <span className="month">JAN</span>
-              </div>
-              <div className="event-details">
-                <h3>Open Source Fiesta</h3>
-                <p>A celebration of open-source technologies and communities</p>
-                <div className="countdown">{countdown2}</div>
-                <button className="primary-btn">Learn More</button>
-              </div>
-            </div>
-          </div>
+          <EventsGrid onRegisterClick={handleEventRegisterClick} />
         </div>
       </section>
 
