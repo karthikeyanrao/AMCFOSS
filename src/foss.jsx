@@ -24,6 +24,8 @@ const FossApp = () => {
   const [isHovering, setIsHovering] = useState(false);
   const [currentContactSlide, setCurrentContactSlide] = useState(0);
   const [isHoveringLink, setIsHoveringLink] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
 
   // Refs
   const navbarRef = useRef(null);
