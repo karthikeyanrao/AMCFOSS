@@ -9,6 +9,7 @@
     "@fortawesome/react-fontawesome": "^0.2.2",
     "aos": "^2.3.4",
     "cra-template": "1.2.0",
+    "firebase": "^12.5.0",
     "font-awesome": "^4.7.0",
     "framer-motion": "^12.5.0",
     "react": "^19.0.0",
