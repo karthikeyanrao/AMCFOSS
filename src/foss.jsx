@@ -11,6 +11,8 @@ import { EventsGrid } from "./components/EventCard";
 import { useAuth } from "./context/AuthContext";
 
 const FossApp = () => {
+  const { user } = useAuth();
+
   // State management
   const [countdown1, setCountdown1] = useState("");
   const [countdown2, setCountdown2] = useState("");
