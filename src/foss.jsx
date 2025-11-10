@@ -9,6 +9,7 @@ import AuthButton from "./components/AuthButton";
 import DashboardModal from "./components/DashboardModal";
 import { EventsGrid } from "./components/EventCard";
 import { useAuth } from "./context/AuthContext";
+import EventRegistrationModal from "./components/EventRegistrationModal";
 
 const FossApp = () => {
   const { user } = useAuth();
