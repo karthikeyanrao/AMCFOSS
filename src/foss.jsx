@@ -434,6 +434,16 @@ const FossApp = () => {
         onClose={() => setIsDashboardOpen(false)}
       />
 
+      {/* Event Registration Modal */}
+      <EventRegistrationModal
+        isOpen={isEventRegistrationOpen}
+        onClose={() => {
+          setIsEventRegistrationOpen(false);
+          setSelectedEvent(null);
+        }}
+        event={selectedEvent}
+      />
+
       <section id="home" className="section hero">
         <div className="hero-content" data-aos="fade-up">
           <h1 className="glitch" data-text="#BuildWithFOSS">#BuildWithFOSS</h1>
