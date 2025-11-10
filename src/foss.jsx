@@ -345,21 +345,8 @@ const FossApp = () => {
   
   return (
     <div>
-      {/* Custom Cursor */}
-      <div 
-        className={`custom-cursor ${isHovering ? 'hover' : ''}`}
-        style={{
-          transform: `translate(${cursorPosition.x}px, ${cursorPosition.y}px)`,
-          width: `${cursorSize}px`,
-          height: `${cursorSize}px`
-        }}
-      />
-      <div 
-        className="cursor-dot"
-        style={{
-          transform: `translate(${cursorDotPosition.x}px, ${cursorDotPosition.y}px)`
-        }}
-      />
+      {/* Car Cursor */}
+      <CarCursor />
 
       <nav id="navbar" className={`navbar ${isNavActive ? 'active' : ''}`} ref={navbarRef}>
         <div className="nav-content">
