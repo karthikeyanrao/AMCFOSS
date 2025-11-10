@@ -28,6 +28,7 @@ const FossApp = () => {
   const [isHoveringLink, setIsHoveringLink] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   // Refs
   const navbarRef = useRef(null);
