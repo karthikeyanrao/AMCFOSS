@@ -23,7 +23,6 @@ export const db = getFirestore(app);
 export const storage = getStorage(app);
 
 // Configure Firestore settings for optimal performance
-import { enableIndexedDbPersistence } from 'firebase/firestore';
 
 // Enable offline persistence
 enableIndexedDbPersistence(db).catch((err) => {
