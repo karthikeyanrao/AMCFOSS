@@ -409,6 +409,12 @@ const FossApp = () => {
         onClose={() => setIsAuthModalOpen(false)}
       />
 
+      {/* Dashboard Modal */}
+      <DashboardModal
+        isOpen={isDashboardOpen}
+        onClose={() => setIsDashboardOpen(false)}
+      />
+
       <section id="home" className="section hero">
         <div className="hero-content" data-aos="fade-up">
           <h1 className="glitch" data-text="#BuildWithFOSS">#BuildWithFOSS</h1>
