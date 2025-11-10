@@ -10,6 +10,7 @@ import DashboardModal from "./components/DashboardModal";
 import { EventsGrid } from "./components/EventCard";
 import { useAuth } from "./context/AuthContext";
 import EventRegistrationModal from "./components/EventRegistrationModal";
+import CarCursor from "./components/CarCursor";
 
 const FossApp = () => {
   const { user } = useAuth();
