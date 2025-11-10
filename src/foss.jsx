@@ -392,7 +392,12 @@ const FossApp = () => {
             <li><a href="#projects" onClick={(e) => smoothScroll(e, '#projects')}>Projects</a></li>
             <li><a href="#team" onClick={(e) => smoothScroll(e, '#team')}>Team</a></li>
             <li><a href="#contact" onClick={(e) => smoothScroll(e, '#contact')}>Contact</a></li>
-            <li><button className="join-btn">Join Us</button></li>
+            <li>
+              <AuthButton
+                onAuthModalOpen={() => setIsAuthModalOpen(true)}
+                onDashboardOpen={() => setIsDashboardOpen(true)}
+              />
+            </li>
           </ul>
         </div>
       </nav>
