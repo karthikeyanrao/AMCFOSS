@@ -6,6 +6,7 @@ import "font-awesome/css/font-awesome.min.css";
 import VanillaTilt from "vanilla-tilt";
 import AuthModal from "./components/AuthModal";
 import AuthButton from "./components/AuthButton";
+import DashboardModal from "./components/DashboardModal";
 
 const FossApp = () => {
   // State management
