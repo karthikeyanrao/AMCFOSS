@@ -38,7 +38,6 @@ const FossApp = () => {
   const autoplayRef = useRef(null);
   const testimonialIntervalRef = useRef(null);
   const teamMarqueeRef = useRef(null);
-  const cursorRef = useRef(null);
 
   // Initialize AOS
   useEffect(() => {
