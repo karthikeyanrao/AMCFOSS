@@ -108,6 +108,18 @@ const FossApp = () => {
     e.target.reset();
   };
 
+  // Handle event registration click
+  const handleEventRegisterClick = (event) => {
+    setSelectedEvent(event);
+    // If user is not logged in, open auth modal
+    if (!user) {
+      setIsAuthModalOpen(true);
+    } else {
+      // TODO: Open event registration modal
+      alert('Event registration modal will open here');
+    }
+  };
+
   // Typing effect
   useEffect(() => {
     const text = "Where Innovation Meets Open Source";
