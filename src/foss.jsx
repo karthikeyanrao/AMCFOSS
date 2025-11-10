@@ -33,6 +33,7 @@ const FossApp = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [isEventRegistrationOpen, setIsEventRegistrationOpen] = useState(false);
 
   // Refs
   const navbarRef = useRef(null);
