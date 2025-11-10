@@ -402,6 +402,12 @@ const FossApp = () => {
         </div>
       </nav>
 
+      {/* Authentication Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
+
       <section id="home" className="section hero">
         <div className="hero-content" data-aos="fade-up">
           <h1 className="glitch" data-text="#BuildWithFOSS">#BuildWithFOSS</h1>
