@@ -342,30 +342,7 @@ const FossApp = () => {
     }
   };
 
-  // Mouse movement effect for custom cursor
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      const { clientX, clientY } = e;
-      
-      // Update cursor position immediately
-      setCursorPosition({ x: clientX, y: clientY });
-      
-      // Update dot position with a slight delay for smooth effect
-      setTimeout(() => {
-        setCursorDotPosition({ x: clientX, y: clientY });
-      }, 100);
-
-      // Check if hovering over interactive elements
-      const target = e.target;
-      const isInteractive = target.closest('a, button, .team-card, .project-card, .about-card, input, textarea');
-      setIsHovering(!!isInteractive);
-      setCursorSize(isInteractive ? 50 : 30);
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
-
+  
   return (
     <div>
       {/* Custom Cursor */}
