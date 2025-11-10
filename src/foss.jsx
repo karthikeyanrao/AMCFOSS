@@ -25,10 +25,6 @@ const FossApp = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [touchStart, setTouchStart] = useState(null);
-  const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
-  const [cursorDotPosition, setCursorDotPosition] = useState({ x: 0, y: 0 });
-  const [cursorSize, setCursorSize] = useState(30);
-  const [isHovering, setIsHovering] = useState(false);
   const [currentContactSlide, setCurrentContactSlide] = useState(0);
   const [isHoveringLink, setIsHoveringLink] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
