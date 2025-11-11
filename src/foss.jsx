@@ -1,35 +1,187 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "./Foss2.css";
 import "aos/dist/aos.css";
 import AOS from "aos";
 import "font-awesome/css/font-awesome.min.css";
 import VanillaTilt from "vanilla-tilt";
+import { addDoc, collection, serverTimestamp, getDocs, query, where } from "firebase/firestore";
+import { db } from "./firebase";
+import { useAuth } from "./context/AuthContext";
 
-const FossApp = () => {
+// HomeEvents component moved outside to prevent re-renders
+const HomeEvents = memo(({ countdown1 }) => {
+  const [homeEvents, setHomeEvents] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const eventsRef = useMemo(() => collection(db, "events"), []);
+  const regsRef = useMemo(() => collection(db, "event_registrations"), []);
+
+  useEffect(() => {
+    let isMounted = true;
+    
+    const loadEvents = async () => {
+      try {
+        const snap = await getDocs(eventsRef);
+        if (!isMounted) return;
+        
+        const eventsList = await Promise.all(
+          snap.docs.map(async (docSnap) => {
+            const eventData = { id: docSnap.id, ...docSnap.data() };
+            
+            // Get participant count
+            const regsQuery = query(regsRef, where("eventId", "==", docSnap.id));
+            const regsSnap = await getDocs(regsQuery);
+            const participantCount = regsSnap.size;
+            const isFull = eventData.participantLimit && participantCount >= eventData.participantLimit;
+            
+            return {
+              ...eventData,
+              participantCount,
+              isFull,
+            };
+          })
+        );
+        
+        const sortedEvents = eventsList.sort((a, b) => {
+          const dateA = a.date ? new Date(a.date).getTime() : 0;
+          const dateB = b.date ? new Date(b.date).getTime() : 0;
+          return dateA - dateB;
+        }).slice(0, 2);
+        
+        setHomeEvents(sortedEvents);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Failed to load events", error);
+        if (isMounted) setIsLoading(false);
+      }
+    };
+    
+    loadEvents();
+    
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="events-grid">
+        <div className="event-card" data-aos="fade-up">
+          <div className="event-date">
+            <span className="day">29</span>
+            <span className="month">JAN</span>
+          </div>
+          <div className="event-details">
+            <h3>FOSS Hackathon 2024</h3>
+            <p>48-hour coding challenge</p>
+            <div className="countdown">{countdown1}</div>
+            <Link to="/events" className="primary-btn">View All Events</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (homeEvents.length === 0) {
+    return (
+      <div className="events-grid">
+        <div className="event-card" data-aos="fade-up">
+          <div className="event-date">
+            <span className="day">29</span>
+            <span className="month">JAN</span>
+          </div>
+          <div className="event-details">
+            <h3>FOSS Hackathon 2024</h3>
+            <p>48-hour coding challenge</p>
+            <div className="countdown">{countdown1}</div>
+            <Link to="/events" className="primary-btn">View All Events</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="events-grid">
+      {homeEvents.map((event, idx) => {
+        const eventDate = event.date ? new Date(event.date) : null;
+        const day = eventDate ? eventDate.getDate() : "TBA";
+        const month = eventDate ? eventDate.toLocaleDateString("en-US", { month: "short" }).toUpperCase() : "TBA";
+        
+        return (
+          <div key={event.id} className="event-card" data-aos="fade-up" data-aos-delay={idx * 100}>
+            <div className="event-date">
+              <span className="day">{day}</span>
+              <span className="month">{month}</span>
+            </div>
+            <div className="event-details">
+              <h3>{event.title}</h3>
+              <p>{event.description || "Join us for an amazing event!"}</p>
+              <div className="event-actions">
+                {event.isFull ? (
+                  <button className="primary-btn event-full-btn" disabled>
+                    Event Full
+                  </button>
+                ) : (
+                  <Link to={`/events/${event.id}`} className="primary-btn">
+                    Register Now
+                    <i className="fas fa-arrow-right" style={{ marginLeft: '0.5rem' }}></i>
+                  </Link>
+                )}
+                {event.participantLimit && (
+                  <div className="event-participants">
+                    <div className="participant-badge">
+                      <i className="fas fa-users"></i>
+                      <span>{event.participantCount || 0}/{event.participantLimit}</span>
+                    </div>
+                    {event.isFull && (
+                      <div className="event-full-badge">Full</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+      <div className="event-card view-all-card" data-aos="fade-up" data-aos-delay={200}>
+        <div className="event-details" style={{ textAlign: "center", justifyContent: "center" }}>
+          <div style={{ marginBottom: "1rem" }}>
+            <i className="fas fa-calendar-alt" style={{ fontSize: "3rem", color: "var(--accent-color)", marginBottom: "1rem", opacity: 0.8 }}></i>
+          </div>
+          <h3 style={{ marginBottom: "1rem" }}>View All Events</h3>
+          <p style={{ marginBottom: "2rem" }}>Discover more upcoming events and workshops</p>
+          <Link to="/events" className="primary-btn" style={{ marginTop: "auto" }}>
+            Explore Events
+            <i className="fas fa-arrow-right" style={{ marginLeft: "0.5rem" }}></i>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+const FossApp = ({ cursorMode = "car", isMobileCursor = false }) => {
+  // Auth
+  const { user, role } = useAuth();
+  
   // State management
   const [countdown1, setCountdown1] = useState("");
   const [countdown2, setCountdown2] = useState("");
   const [typedText, setTypedText] = useState("");
   const [restart, setRestart] = useState(false);
   const [isNavActive, setIsNavActive] = useState(false);
-  const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isMobile, setIsMobile] = useState(() => (typeof window !== "undefined" ? window.innerWidth < 768 : false));
   const [touchStart, setTouchStart] = useState(null);
-  const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
-  const [cursorDotPosition, setCursorDotPosition] = useState({ x: 0, y: 0 });
-  const [cursorSize, setCursorSize] = useState(30);
-  const [isHovering, setIsHovering] = useState(false);
-  const [currentContactSlide, setCurrentContactSlide] = useState(0);
-  const [isHoveringLink, setIsHoveringLink] = useState(false);
+  const [contactStatus, setContactStatus] = useState(null);
+  const [teamPaused, setTeamPaused] = useState(false);
 
   // Refs
   const navbarRef = useRef(null);
-  const carouselRef = useRef(null);
   const autoplayRef = useRef(null);
-  const testimonialIntervalRef = useRef(null);
-  const teamMarqueeRef = useRef(null);
-  const cursorRef = useRef(null);
+  const contactMessagesRef = useMemo(() => collection(db, "contact_messages"), []);
 
   // Initialize AOS
   useEffect(() => {
@@ -59,6 +211,8 @@ const FossApp = () => {
     setIsNavActive(prev => !prev);
   };
 
+  const navigate = useNavigate();
+
   // Smooth scrolling
   const smoothScroll = (e, targetId) => {
     e.preventDefault();
@@ -73,24 +227,24 @@ const FossApp = () => {
   const handleContactSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
+    const payload = {
+      name: formData.get("name"),
+      email: formData.get("email"),
+      message: formData.get("message") || formData.get("Message"),
+      createdAt: serverTimestamp(),
+      source: "landing_contact",
+    };
 
     try {
-      const response = await fetch(e.target.action, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          Accept: 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        alert('Thank you for your message! We will get back to you soon.');
-        e.target.reset();
-      } else {
-        alert('Oops! There was a problem submitting your form.');
-      }
+      setContactStatus("saving");
+      await addDoc(contactMessagesRef, payload);
+      setContactStatus("success");
+      e.target.reset();
     } catch (error) {
-      alert('Oops! There was a problem submitting your form.');
+      console.error("Failed to save contact message", error);
+      setContactStatus("error");
+    } finally {
+      setTimeout(() => setContactStatus(null), 4000);
     }
   };
 
@@ -104,11 +258,12 @@ const FossApp = () => {
   // Typing effect
   useEffect(() => {
     const text = "Where Innovation Meets Open Source";
+    setTypedText(""); // Reset text first
     let index = 0;
 
     const typeWriter = () => {
       if (index < text.length) {
-        setTypedText(prev => prev + text.charAt(index));
+        setTypedText(text.substring(0, index + 1));
         index++;
         setTimeout(typeWriter, 50);
       } else {
@@ -238,24 +393,28 @@ const FossApp = () => {
     });
   }, []);
 
+  const imageBase = "https://raw.githubusercontent.com/karthikeyanrao/AMCFOSS/main/images";
+  const resolveImage = useCallback((file) => `${imageBase}/${file}`, []);
+  const clubLogo = resolveImage("amc-foss-logo.png");
+
   // Team members data
   const teamMembers = [
     { 
-      name: "Shashanky", 
+      name: "Karthikeyan", 
       role: "President",
       roleIcon: "fas fa-crown",
-      photo: "/images/photo.png",
+      photo: resolveImage("Photo.jpg"),
       social: {
-        instagram: "Shashank_y_4.5",
-        github: "shashank-y",
-        linkedin: "shashanky"
+        instagram: "heyy._karthi",
+        github: "karthikeyanrao",
+        linkedin: "karthikeyanrao-suresh"
       }
     },
     { 
-      name: "Harish Praveen", 
+      name: "Mangalya", 
       role: "Vice President",
       roleIcon: "fas fa-star",
-      photo: "/images/photo.png",
+      photo: resolveImage("foss-community.png"),
       social: {
         instagram: "janesmith",
         github: "janesmith",
@@ -263,10 +422,10 @@ const FossApp = () => {
       }
     },
     { 
-      name: "Pravin Dharsaun", 
-      role: "Coordinator",
+      name: "Padmaja", 
+      role: "Secretary",
       roleIcon: "fas fa-tasks",
-      photo: "/images/photo.png",
+      photo: resolveImage("amc-foss-logo.png"),
       social: {
         instagram: "boii__loather",
         github: "pravin",
@@ -274,10 +433,10 @@ const FossApp = () => {
       }
     },
     { 
-      name: "Karthikeyan", 
-      role: "Technical Lead",
+      name: "Chandana", 
+      role: "Joint-Secretary",
       roleIcon: "fas fa-code",
-      photo: "/images/photo.png",
+      photo: resolveImage("foss-community.png"),
       social: {
         instagram: "alexj_tech",
         github: "alexj",
@@ -285,10 +444,43 @@ const FossApp = () => {
       }
     },
     { 
-      name: "Padmaja", 
-      role: "Design Head",
+      name: "Ajay", 
+      role: "PR",
       roleIcon: "fas fa-palette",
-      photo: "/images/photo.png",
+      photo: resolveImage("amc-foss-logo.png"),
+      social: {
+        instagram: "sarah_designs",
+        github: "sarahw",
+        linkedin: "sarah-wilson"
+      }
+    },
+    { 
+      name: "Ajay", 
+      role: "PR",
+      roleIcon: "fas fa-palette",
+      photo: resolveImage("amc-foss-logo.png"),
+      social: {
+        instagram: "sarah_designs",
+        github: "sarahw",
+        linkedin: "sarah-wilson"
+      }
+    },
+    { 
+      name: "Ajay", 
+      role: "PR",
+      roleIcon: "fas fa-palette",
+      photo: resolveImage("amc-foss-logo.png"),
+      social: {
+        instagram: "sarah_designs",
+        github: "sarahw",
+        linkedin: "sarah-wilson"
+      }
+    }
+    ,{ 
+      name: "Ajay", 
+      role: "PR",
+      roleIcon: "fas fa-palette",
+      photo: resolveImage("amc-foss-logo.png"),
       social: {
         instagram: "sarah_designs",
         github: "sarahw",
@@ -297,14 +489,21 @@ const FossApp = () => {
     }
   ];
 
-  // Auto-sliding functionality
+  // Auto-sliding functionality with pause support
   useEffect(() => {
-    const slideInterval = setInterval(() => {
+    if (teamPaused) {
+      if (autoplayRef.current) {
+        clearInterval(autoplayRef.current);
+        autoplayRef.current = null;
+      }
+      return;
+    }
+    const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % teamMembers.length);
     }, 3000);
-
-    return () => clearInterval(slideInterval);
-  }, []);
+    autoplayRef.current = interval;
+    return () => clearInterval(interval);
+  }, [teamPaused, teamMembers.length]);
 
   const handlePrevSlide = () => {
     setCurrentSlide((prev) => (prev - 1 + teamMembers.length) % teamMembers.length);
@@ -314,60 +513,13 @@ const FossApp = () => {
     setCurrentSlide((prev) => (prev + 1) % teamMembers.length);
   };
 
-  const handleContactSlide = (direction) => {
-    if (direction === 'next') {
-      setCurrentContactSlide(prev => (prev + 1) % 3);
-    } else {
-      setCurrentContactSlide(prev => (prev - 1 + 3) % 3);
-    }
-  };
-
-  // Mouse movement effect for custom cursor
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      const { clientX, clientY } = e;
-      
-      // Update cursor position immediately
-      setCursorPosition({ x: clientX, y: clientY });
-      
-      // Update dot position with a slight delay for smooth effect
-      setTimeout(() => {
-        setCursorDotPosition({ x: clientX, y: clientY });
-      }, 100);
-
-      // Check if hovering over interactive elements
-      const target = e.target;
-      const isInteractive = target.closest('a, button, .team-card, .project-card, .about-card, input, textarea');
-      setIsHovering(!!isInteractive);
-      setCursorSize(isInteractive ? 50 : 30);
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
 
   return (
     <div>
-      {/* Custom Cursor */}
-      <div 
-        className={`custom-cursor ${isHovering ? 'hover' : ''}`}
-        style={{
-          transform: `translate(${cursorPosition.x}px, ${cursorPosition.y}px)`,
-          width: `${cursorSize}px`,
-          height: `${cursorSize}px`
-        }}
-      />
-      <div 
-        className="cursor-dot"
-        style={{
-          transform: `translate(${cursorDotPosition.x}px, ${cursorDotPosition.y}px)`
-        }}
-      />
-
       <nav id="navbar" className={`navbar ${isNavActive ? 'active' : ''}`} ref={navbarRef}>
         <div className="nav-content">
           <div className="logo">
-            <img src="/images/amc-foss-logo.png" alt="FOSS" className="nav-logo" />
+            <img src={clubLogo} alt="FOSS" className="nav-logo" />
             <span>FOSS Club</span>
           </div>
           <div 
@@ -388,22 +540,62 @@ const FossApp = () => {
             <li><a href="#projects" onClick={(e) => smoothScroll(e, '#projects')}>Projects</a></li>
             <li><a href="#team" onClick={(e) => smoothScroll(e, '#team')}>Team</a></li>
             <li><a href="#contact" onClick={(e) => smoothScroll(e, '#contact')}>Contact</a></li>
-            <li><button className="join-btn">Join Us</button></li>
+            <li className="auth-links">
+              {user ? (
+                <Link 
+                  to={role === "office_bearer" ? "/office" : role === "mentor" ? "/mentor" : "/"} 
+                  className="auth-link"
+                >
+                  Go to Dashboard
+                </Link>
+              ) : (
+                <Link to="/login" className="auth-link">Login</Link>
+              )}
+              
+              <button className="join-btn" onClick={() => navigate('/events')}>Join Us</button>
+            </li>
           </ul>
         </div>
       </nav>
 
       <section id="home" className="section hero">
         <div className="hero-content" data-aos="fade-up">
-          <h1 className="glitch" data-text="#BuildWithFOSS">#BuildWithFOSS</h1>
-          <h2 className="typewriter">{typedText}</h2>
+          <div className="hero-badge" data-aos="fade-down" data-aos-delay="100">
+            <span> Welcome to AMC FOSS Club</span>
+          </div>
+          <h1 className="glitch hero-title" data-text="#BuildWithFOSS">
+            <span className="glitch-text">#BuildWithFOSS</span>
+            <span className="glitch-layer glitch-layer-1">#BuildWithFOSS</span>
+            <span className="glitch-layer glitch-layer-2">#BuildWithFOSS</span>
+          </h1>
+          <h2 className="typewriter hero-subtitle">{typedText}</h2>
           <p className="hero-description">
-            Join us in building the future of technology through collaboration and
-            open-source development
+            Join a vibrant community of developers, designers, and innovators building the future of technology through 
+            <span className="highlight-text"> open-source collaboration</span> and <span className="highlight-text">cutting-edge innovation</span>.
           </p>
-          <div className="hero-buttons">
-            <a href="#" className="btn primary-btn">Get Started</a>
-            <a href="#" className="btn secondary-btn">Learn More</a>
+          <div className="hero-stats" data-aos="fade-up" data-aos-delay="300">
+            <div className="hero-stat">
+              <span className="stat-number">150+</span>
+              <span className="stat-label">Contributors</span>
+            </div>
+            <div className="hero-stat">
+              <span className="stat-number">40+</span>
+              <span className="stat-label">Projects</span>
+            </div>
+            <div className="hero-stat">
+              <span className="stat-number">25+</span>
+              <span className="stat-label">Workshops</span>
+            </div>
+          </div>
+          <div className="hero-buttons" data-aos="fade-up" data-aos-delay="400">
+            <a href="#events" onClick={(e) => smoothScroll(e, '#events')} className="btn primary-btn">
+              <span>Explore Events</span>
+              <i className="fas fa-arrow-right"></i>
+            </a>
+            <a href="#about" onClick={(e) => smoothScroll(e, '#about')} className="btn secondary-btn">
+              <span>Learn More</span>
+              <i className="fas fa-info-circle"></i>
+            </a>
           </div>
         </div>
         <div className="hero-overlay"></div>
@@ -413,12 +605,18 @@ const FossApp = () => {
             <span className="wheel"></span>
           </span>
           <p>Scroll Down</p>
+          {!isMobileCursor && cursorMode === "car" ? (
+            <p className="hero-controls-hint">Use ↑ ↓ ← → to drive • Enter / Space to click</p>
+          ) : null}
         </div>
       </section>
 
       <section id="about" className="section about">
         <div className="section-content">
           <h2 className="section-title" data-aos="fade-up">About Our Club</h2>
+          <p className="about-subtitle" data-aos="fade-up" data-aos-delay="100">
+            A creative playground where developers, designers, and open source storytellers craft experiences together.
+          </p>
           <div className="about-grid">
             <div className="about-card" data-aos="fade-right">
               <i className="fas fa-code"></i>
@@ -436,38 +634,31 @@ const FossApp = () => {
               <p>Regular workshops on latest technologies and tools</p>
             </div>
           </div>
+          <div className="about-highlight-grid" data-aos="fade-up" data-aos-delay="150">
+            <div className="about-highlight-tile">
+              <span className="highlight-value">150+</span>
+              <span className="highlight-label">Active Contributors</span>
+            </div>
+            <div className="about-highlight-tile">
+              <span className="highlight-value">40+</span>
+              <span className="highlight-label">Open Source Projects</span>
+            </div>
+            <div className="about-highlight-tile">
+              <span className="highlight-value">25</span>
+              <span className="highlight-label">Mentor-Led Workshops</span>
+            </div>
+            <div className="about-highlight-tile">
+              <span className="highlight-value">∞</span>
+              <span className="highlight-label">Ideas & Collaborations</span>
+            </div>
+          </div>
         </div>
       </section>
 
       <section id="events" className="section events">
         <div className="section-content">
           <h2 className="section-title" data-aos="fade-up">Upcoming Events</h2>
-          <div className="events-grid">
-            <div className="event-card" data-aos="fade-up">
-              <div className="event-date">
-                <span className="day">29</span>
-                <span className="month">JAN</span>
-              </div>
-              <div className="event-details">
-                <h3>FOSS Hackathon 2024</h3>
-                <p>48-hour coding challenge</p>
-                <div className="countdown">{countdown1}</div>
-                <button className="primary-btn">Register Now</button>
-              </div>
-            </div>
-            <div className="event-card" data-aos="fade-up">
-              <div className="event-date">
-                <span className="day">30</span>
-                <span className="month">JAN</span>
-              </div>
-              <div className="event-details">
-                <h3>Open Source Fiesta</h3>
-                <p>A celebration of open-source technologies and communities</p>
-                <div className="countdown">{countdown2}</div>
-                <button className="primary-btn">Learn More</button>
-              </div>
-            </div>
-          </div>
+          <HomeEvents countdown1={countdown1} />
         </div>
       </section>
 
@@ -509,8 +700,13 @@ const FossApp = () => {
   <div className="section-content">
     <h2 className="section-title" data-aos="fade-up">Meet Our Team</h2>
     <p className="section-subtitle" data-aos="fade-up">The amazing people behind FOSS Club</p>
+ 
     <div className="team-slider-container">
-      <div className="team-slider">
+    <div
+      className="team-slider"
+      onMouseEnter={() => setTeamPaused(true)}
+      onMouseLeave={() => setTeamPaused(false)}
+    >
         {teamMembers.map((member, index) => {
           let position = '';
           if (index === currentSlide) {
@@ -589,16 +785,16 @@ const FossApp = () => {
         <div className="section-content">
           <h2 className="section-title" data-aos="fade-up">Get In Touch</h2>
           <div className="contact-container">
-            <div className="contact-slider" style={{ transform: `translateX(-${currentContactSlide * 320}px)` }}>
+          <div className="contact-slider">
               <div className="contact-info" data-aos="fade-right">
                 <div className="contact-profile">
-                  <img src="/images/amc-foss-logo.png" alt="FOSS Club" />
+                  <img src={clubLogo} alt="FOSS Club" />
                 </div>
                 <h3 className="contact-title">FOSS Club</h3>
                 <p className="contact-subtitle">Join our community of open source enthusiasts</p>
                 <div className="info-item">
                   <i className="fas fa-envelope"></i>
-                  <p>amcfoss@gmail.com</p>
+                  <p>amcfoss@ch.amrita.com</p>
                 </div>
                 <div className="info-item">
                   <i className="fas fa-map-marker-alt"></i>
@@ -614,15 +810,21 @@ const FossApp = () => {
 
               <form
                 className="contact-form"
-                action="https://formspree.io/f/mbllgedv"
-                method="POST"
                 onSubmit={handleContactSubmit}
                 data-aos="fade-left"
               >
                 <input type="text" name="name" placeholder="Your Name" required />
                 <input type="email" name="email" placeholder="Your Email" required />
-                <textarea name="Message" placeholder="Your Message" required></textarea>
-                <button type="submit" className="primary-btn">Send Message</button>
+                <textarea name="message" placeholder="Your Message" required></textarea>
+                <button type="submit" className="primary-btn">
+                  {contactStatus === "saving" ? "Sending..." : "Send Message"}
+                </button>
+                {contactStatus === "success" ? (
+                  <p className="contact-status success">Message stored successfully. We will reach out soon!</p>
+                ) : null}
+                {contactStatus === "error" ? (
+                  <p className="contact-status error">Unable to send right now. Please try again.</p>
+                ) : null}
               </form>
             </div>
           </div>
@@ -644,17 +846,7 @@ const FossApp = () => {
               <li><a href="#projects">Projects</a></li>
             </ul>
           </div>
-          <div className="footer-section">
-            <h3>Newsletter</h3>
-            <form 
-              className="newsletter-form" 
-              action="https://formspree.io/f/mbllgedv"
-              onSubmit={handleNewsletterSubmit}
-            >
-              <input type="email" placeholder="Your email" required />
-              <button type="submit">Subscribe</button>
-            </form>
-          </div>
+          
         </div>
         <div className="footer-bottom">
           <p>&copy; {new Date().getFullYear()} FOSS Club. All rights reserved.</p>

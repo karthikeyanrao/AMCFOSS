@@ -1,0 +1,160 @@
+import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "../firebase";
+import "../Foss2.css";
+
+export default function Events() {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const eventsRef = useMemo(() => collection(db, "events"), []);
+  const regsRef = useMemo(() => collection(db, "event_registrations"), []);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const snap = await getDocs(eventsRef);
+        const eventsList = await Promise.all(
+          snap.docs.map(async (docSnap) => {
+            const eventData = { id: docSnap.id, ...docSnap.data() };
+            
+            // Get participant count
+            const regsQuery = query(regsRef, where("eventId", "==", docSnap.id));
+            const regsSnap = await getDocs(regsQuery);
+            const participantCount = regsSnap.size;
+            const isFull = eventData.participantLimit && participantCount >= eventData.participantLimit;
+            
+            return {
+              ...eventData,
+              participantCount,
+              isFull,
+            };
+          })
+        );
+        
+        // Sort events by date
+        const sortedEvents = eventsList.sort((a, b) => {
+          const dateA = a.date ? new Date(a.date).getTime() : 0;
+          const dateB = b.date ? new Date(b.date).getTime() : 0;
+          return dateA - dateB;
+        });
+        
+        setEvents(sortedEvents);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [eventsRef, regsRef]);
+
+  return (
+    <div className="relative min-h-screen overflow-hidden bg-[#02050c] text-white">
+      <div className="absolute inset-0 -z-10">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(129,140,248,0.22),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(34,197,94,0.18),transparent_50%)]" />
+        <div className="absolute -left-24 top-12 h-[26rem] w-[26rem] rounded-full bg-indigo-500/25 blur-3xl" />
+        <div className="absolute -right-24 bottom-8 h-[28rem] w-[28rem] rounded-full bg-emerald-500/25 blur-3xl" />
+      </div>
+
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col px-6 py-16 lg:px-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="mb-12 flex flex-col gap-4 text-center lg:mb-16"
+        >
+          <span className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs uppercase tracking-[0.35em] text-indigo-200/80">
+            Calendar
+          </span>
+          <h1 className="text-4xl font-semibold text-white sm:text-5xl">Upcoming AMC FOSS Lineup</h1>
+          <p className="mx-auto max-w-2xl text-sm text-slate-300">
+            Dive into next-gen hackathons, community jams, and lightning talks. Register to reserve your seat and
+            receive mission briefs right in your inbox.
+          </p>
+        </motion.div>
+
+        {loading ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="rounded-3xl border border-white/10 bg-white/5 px-6 py-6 text-center text-sm text-slate-300 backdrop-blur"
+          >
+            Fetching events from the community desk…
+          </motion.div>
+        ) : null}
+
+        <div className="mt-12 events-grid-modern">
+          {events.map((event, idx) => {
+            const eventDate = event.date ? new Date(event.date) : null;
+            const day = eventDate ? eventDate.getDate() : "TBA";
+            const month = eventDate ? eventDate.toLocaleDateString("en-US", { month: "short" }).toUpperCase() : "TBA";
+            
+            return (
+              <motion.div
+                key={event.id}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: idx * 0.06 }}
+                className="event-card-modern"
+              >
+                <div className="event-date-modern">
+                  <span className="day-modern">{day}</span>
+                  <span className="month-modern">{month}</span>
+                </div>
+                <div className="event-details-modern">
+                  <div className="event-header-modern">
+                    <h2 className="event-title-modern">{event.title}</h2>
+                    <span className="event-badge-modern">On Campus</span>
+                  </div>
+                  {event.description ? (
+                    <p className="event-description-modern">{event.description}</p>
+                  ) : (
+                    <p className="event-description-modern">
+                      Event details coming soon. Stay tuned for the full agenda drop.
+                    </p>
+                  )}
+                  <div className="event-footer-modern">
+                    {event.participantLimit && (
+                      <div className="participant-info-modern">
+                        <div className="participant-badge-modern">
+                          <i className="fas fa-users"></i>
+                          <span>{event.participantCount || 0}/{event.participantLimit}</span>
+                        </div>
+                        {event.isFull && (
+                          <div className="event-full-modern">Full</div>
+                        )}
+                      </div>
+                    )}
+                    {event.isFull ? (
+                      <button className="register-btn-modern disabled" disabled>
+                        Event Full
+                      </button>
+                    ) : (
+                      <Link
+                        to={`/events/${event.id}`}
+                        className="register-btn-modern"
+                      >
+                        Register
+                        <i className="fas fa-arrow-right"></i>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {events.length === 0 && !loading ? (
+          <div className="mt-10 rounded-3xl border border-white/10 bg-white/5 px-6 py-12 text-center text-sm text-slate-300 backdrop-blur">
+            No events published yet. Check back soon or reach out to office bearers to seed the next gathering!
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+
