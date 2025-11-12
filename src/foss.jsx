@@ -369,7 +369,7 @@ const FossApp = () => {
     loadParticles();
   }, []);
 
-  // Carousel functionality
+  // Mobile detection for responsive behavior
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -378,22 +378,6 @@ const FossApp = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  const startCarouselAutoplay = useCallback(() => {
-    if (autoplayRef.current) clearInterval(autoplayRef.current);
-    autoplayRef.current = setInterval(() => {
-      setCurrentSlide(prev => 
-        prev >= (isMobile ? 2 : 0) ? 0 : prev + 1
-      );
-    }, 5000);
-  }, [isMobile]);
-
-  useEffect(() => {
-    startCarouselAutoplay();
-    return () => {
-      if (autoplayRef.current) clearInterval(autoplayRef.current);
-    };
-  }, [startCarouselAutoplay]);
 
   const handleTouchStart = (e) => {
     setTouchStart(e.touches[0].clientX);
@@ -405,10 +389,10 @@ const FossApp = () => {
     const touchEnd = e.changedTouches[0].clientX;
     const diff = touchStart - touchEnd;
 
-    if (diff > 50 && currentSlide < 2) {
-      setCurrentSlide(prev => prev + 1);
-    } else if (diff < -50 && currentSlide > 0) {
-      setCurrentSlide(prev => prev - 1);
+    if (diff > 50) {
+      setCurrentSlide((prev) => (prev + 1) % teamMembers.length);
+    } else if (diff < -50) {
+      setCurrentSlide((prev) => (prev - 1 + teamMembers.length) % teamMembers.length);
     }
 
     setTouchStart(null);
@@ -445,10 +429,10 @@ const FossApp = () => {
       }
     },
     { 
-      name: "Mangalya", 
+      name: "Maangalya", 
       role: "Vice President",
-      roleIcon: "fas fa-star",
-      photo: resolveImage("Mangalya.jpg"),
+      roleIcon: "fas fa-crown",
+      photo: resolveImage("Maangalya.jpg"),
       social: {
         instagram: "janesmith",
         github: "janesmith",
@@ -458,7 +442,7 @@ const FossApp = () => {
     { 
       name: "Padmaja", 
       role: "Secretary",
-      roleIcon: "fas fa-tasks",
+      roleIcon: "fas fa-crown",
       photo: resolveImage("Padmaja.jpg"),
       social: {
         instagram: "boii__loather",
@@ -469,7 +453,7 @@ const FossApp = () => {
     { 
       name: "Chandana", 
       role: "Joint-Secretary",
-      roleIcon: "fas fa-code",
+      roleIcon: "fas fa-crown",
       photo: resolveImage("Chandana.png"),
       social: {
         instagram: "alexj_tech",
@@ -480,8 +464,8 @@ const FossApp = () => {
     { 
       name: "Ajay", 
       role: "PR",
-      roleIcon: "fas fa-palette",
-      photo: resolveImage("Ajay.jpg"),
+      roleIcon: "fas fa-star",
+      photo: resolveImage("Ajay.JPG"),
       social: {
         instagram: "sarah_designs",
         github: "sarahw",
@@ -491,7 +475,7 @@ const FossApp = () => {
     { 
       name: "Nihan Anoop", 
       role: "Ofice-Bearer",
-      roleIcon: "fas fa-palette",
+      roleIcon: "fas fa-star",
       photo: resolveImage("Nihan.png"),
       social: {
         instagram: "sarah_designs",
@@ -502,7 +486,7 @@ const FossApp = () => {
     { 
       name: "Ruhan", 
       role: "Office-Bearer",
-      roleIcon: "fas fa-palette",
+      roleIcon: "fas fa-star",
       photo: resolveImage("Ruhan.jpg"),
       social: {
         instagram: "sarah_designs",
@@ -511,9 +495,9 @@ const FossApp = () => {
       }
     },
     { 
-      name: "SriVishny", 
+      name: "SriVishnu", 
       role: "Club coordinator",
-      roleIcon: "fas fa-palette",
+      roleIcon: "fas fa-code",
       photo: resolveImage("Srivishnu.jpg"),
       social: {
         instagram: "sarah_designs",
@@ -524,7 +508,7 @@ const FossApp = () => {
     ,{ 
       name: "Bhoomish", 
       role: "Technical Lead",
-      roleIcon: "fas fa-palette",
+      roleIcon: "fas fa-code",
       photo: resolveImage("Bhoomish.jpg"),
       social: {
         instagram: "sarah_designs",
@@ -535,7 +519,7 @@ const FossApp = () => {
     ,{ 
       name: "Sakthi Sri Kumaran", 
       role: "Technical Lead",
-      roleIcon: "fas fa-palette",
+      roleIcon: "fas fa-code",
       photo: resolveImage("Sakthi.jpg"),
       social: {
         instagram: "sarah_designs",
@@ -752,38 +736,60 @@ const FossApp = () => {
 <section id="team" className="section team">
   <div className="section-content">
     <h2 className="section-title" data-aos="fade-up">Meet Our Team</h2>
-    <p className="section-subtitle" data-aos="fade-up">The amazing people behind FOSS Club</p>
+    <p className="section-subtitle" data-aos="fade-up"   style={{textAlign: 'center', marginTop: '-2rem'}}>The amazing people behind FOSS Club</p>
  
     <div className="team-slider-container">
     <div
       className="team-slider"
       onMouseEnter={() => setTeamPaused(true)}
       onMouseLeave={() => setTeamPaused(false)}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
         {teamMembers.map((member, index) => {
-          let position = '';
-          if (index === currentSlide) {
-            position = 'active';
-          } else if (index === (currentSlide - 1 + teamMembers.length) % teamMembers.length) {
-            position = 'prev';
-          } else if (index === (currentSlide + 1) % teamMembers.length) {
-            position = 'next';
+          // Calculate circular position relative to current slide
+          const totalMembers = teamMembers.length;
+          let diff = index - currentSlide;
+          
+          // Normalize diff to shortest circular distance (-totalMembers/2 to totalMembers/2)
+          if (diff > totalMembers / 2) {
+            diff = diff - totalMembers;
+          } else if (diff < -totalMembers / 2) {
+            diff = diff + totalMembers;
           }
+          
+          // Determine position class
+          let position = '';
+          if (diff === 0) {
+            position = 'active';
+          } else if (diff === -1) {
+            position = 'prev';
+          } else if (diff === 1) {
+            position = 'next';
+          } else if (Math.abs(diff) <= 2) {
+            position = 'nearby';
+          }
+          
+          // Calculate scale and opacity based on distance
+          const absDiff = Math.abs(diff);
+          const scale = absDiff === 0 ? 1 : absDiff === 1 ? 0.85 : Math.max(0.5, 1 - absDiff * 0.12);
+          const opacity = absDiff === 0 ? 1 : absDiff === 1 ? 0.7 : Math.max(0.2, 0.6 - absDiff * 0.1);
+          const blur = absDiff === 0 ? 0 : absDiff === 1 ? 2 : Math.min(6, absDiff * 1.5);
+          
+          // Calculate horizontal offset - use the normalized diff
+          const offsetX = diff * 120; // 120% per card for better spacing
           
           return (
             <div 
               key={index} 
               className={`team-card ${position}`}
               style={{
-                transform: position === 'active' 
-                  ? 'translate(-50%, -50%) scale(1)' 
-                  : position === 'prev'
-                  ? 'translate(-150%, -50%) scale(0.8)'
-                  : position === 'next'
-                  ? 'translate(50%, -50%) scale(0.8)'
-                  : 'translate(-50%, -50%) scale(0.8)',
-                opacity: position ? (position === 'active' ? 1 : 0.6) : 0,
-                pointerEvents: position ? 'auto' : 'none'
+                transform: `translate(calc(-50% + ${offsetX}%), -50%) scale(${scale})`,
+                opacity: opacity,
+                pointerEvents: absDiff <= 1 ? 'auto' : 'none',
+                zIndex: totalMembers - absDiff,
+                filter: `blur(${blur}px)`,
+                transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
               }}
             >
               <div className="member-image-wrapper">

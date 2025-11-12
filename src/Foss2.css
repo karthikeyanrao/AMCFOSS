@@ -48,8 +48,8 @@ body {
 }
 
 .cursor-inner {
-    width: 8px;
-    height: 8px;
+    width: 4px;
+    height: 4px;
     background: rgba(0, 255, 136, 1);
     border-radius: 50%;
     position: absolute;
@@ -64,11 +64,11 @@ body {
 
 @keyframes cursor-pulse {
     0%, 100% {
-        transform: translate(-50%, -50%) scale(1);
+        transform: translate(-50%, -50%) scale(.8);
         opacity: 0.8;
     }
     50% {
-        transform: translate(-50%, -50%) scale(1.1);
+        transform: translate(-50%, -50%) scale(.9);
         opacity: 1;
     }
 }
@@ -161,7 +161,8 @@ a, button, input, textarea, select, [role="button"], [onclick] {
 }
 
 .auth-link {
-    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+    
+    background: rgba(46, 204, 113, 0.15);
     color: var(--text-color);
     padding: 0.45rem 1rem;
     border-radius: 999px;
@@ -174,10 +175,9 @@ a, button, input, textarea, select, [role="button"], [onclick] {
 }
 
 .auth-link:hover {
-    background: rgba(46, 204, 113, 0.15);
+    background:linear-gradient(45deg, var(--primary-color), var(--secondary-color));
     border-color: rgba(46, 204, 113, 0.4);
     color: var(--accent-color); 
-    text-decoration: none;
     box-shadow: 0 12px 28px rgba(0, 255, 136, 0.3);
 }
 
@@ -1318,10 +1318,11 @@ a, button, input, textarea, select, [role="button"], [onclick] {
     position: relative;
     width: 100%;
     max-width: 1400px;
+
     margin: 0 auto;
     height: 540px;
     overflow: visible;
-    margin-top: 2rem; /* Add some space after title */
+    margin-top: 6rem; /* Add some space after title */
 }
 
 .team-slider {
@@ -1331,6 +1332,8 @@ a, button, input, textarea, select, [role="button"], [onclick] {
     display: flex;
     justify-content: center;
     align-items: center;
+    overflow: visible;
+    perspective: 1000px;
 }
 
 .team-card {
@@ -1339,7 +1342,7 @@ a, button, input, textarea, select, [role="button"], [onclick] {
     background: rgba(45, 45, 68, 0.7);
     border-radius: 25px;
     overflow: visible;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     backdrop-filter: blur(15px);
     padding: 2.5rem;
     opacity: 0;
@@ -1350,27 +1353,38 @@ a, button, input, textarea, select, [role="button"], [onclick] {
     margin-top: -140px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    will-change: transform, opacity;
 }
 
 .team-card.prev {
-    transform: scale(0.8) translate(-150%, -50%);
-    opacity: 0.6;
+    transform: scale(0.85) translate(-150%, -50%);
+    opacity: 0.7;
     z-index: 1;
     pointer-events: auto;
+    filter: blur(2px);
 }
 
 .team-card.active {
     transform: scale(1) translate(-50%, -50%);
     opacity: 1;
-    z-index: 2;
+    z-index: 3;
     pointer-events: auto;
+    filter: blur(0);
 }
 
 .team-card.next {
-    transform: scale(0.8) translate(50%, -50%);
-    opacity: 0.6;
+    transform: scale(0.85) translate(50%, -50%);
+    opacity: 0.7;
     z-index: 1;
     pointer-events: auto;
+    filter: blur(2px);
+}
+
+.team-card.nearby {
+    opacity: 0.3;
+    z-index: 0;
+    pointer-events: none;
+    filter: blur(4px);
 }
 
 .member-image-wrapper {
