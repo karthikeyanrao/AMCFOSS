@@ -8,23 +8,35 @@ import "../Foss2.css";
 export default function Events() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const eventsRef = useMemo(() => collection(db, "events"), []);
   const regsRef = useMemo(() => collection(db, "event_registrations"), []);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
+      setError(null);
       try {
         const snap = await getDocs(eventsRef);
         const eventsList = await Promise.all(
           snap.docs.map(async (docSnap) => {
             const eventData = { id: docSnap.id, ...docSnap.data() };
             
-            // Get participant count
-            const regsQuery = query(regsRef, where("eventId", "==", docSnap.id));
-            const regsSnap = await getDocs(regsQuery);
-            const participantCount = regsSnap.size;
-            const isFull = eventData.participantLimit && participantCount >= eventData.participantLimit;
+            // Get participant count - handle permission errors gracefully
+            let participantCount = 0;
+            let isFull = false;
+            try {
+              const regsQuery = query(regsRef, where("eventId", "==", docSnap.id));
+              const regsSnap = await getDocs(regsQuery);
+              participantCount = regsSnap.size;
+              isFull = eventData.participantLimit && participantCount >= eventData.participantLimit;
+            } catch (regError) {
+              console.warn(`Failed to load participant count for event ${docSnap.id}:`, regError);
+              // Continue without participant count if permission denied
+              if (regError.code === 'permission-denied') {
+                participantCount = 0;
+              }
+            }
             
             return {
               ...eventData,
@@ -42,6 +54,14 @@ export default function Events() {
         });
         
         setEvents(sortedEvents);
+      } catch (err) {
+        console.error("Failed to load events:", err);
+        setError(
+          err.code === 'permission-denied'
+            ? "Unable to load events. Please check Firebase security rules allow public read access to 'events' collection."
+            : "Failed to load events. Please try again later."
+        );
+        setEvents([]);
       } finally {
         setLoading(false);
       }
@@ -82,6 +102,20 @@ export default function Events() {
             className="rounded-3xl border border-white/10 bg-white/5 px-6 py-6 text-center text-sm text-slate-300 backdrop-blur"
           >
             Fetching events from the community desk…
+          </motion.div>
+        ) : null}
+
+        {error ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-8 rounded-3xl border border-red-500/40 bg-red-500/10 px-6 py-8 text-center backdrop-blur"
+          >
+            <div className="mb-2 text-lg font-semibold text-red-300">⚠️ Error Loading Events</div>
+            <p className="text-sm text-red-200/90">{error}</p>
+            <p className="mt-4 text-xs text-slate-400">
+              If you're the administrator, please update Firebase Firestore security rules to allow public read access.
+            </p>
           </motion.div>
         ) : null}
 

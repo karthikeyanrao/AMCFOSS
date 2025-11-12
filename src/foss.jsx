@@ -28,11 +28,21 @@ const HomeEvents = memo(({ countdown1 }) => {
           snap.docs.map(async (docSnap) => {
             const eventData = { id: docSnap.id, ...docSnap.data() };
             
-            // Get participant count
-            const regsQuery = query(regsRef, where("eventId", "==", docSnap.id));
-            const regsSnap = await getDocs(regsQuery);
-            const participantCount = regsSnap.size;
-            const isFull = eventData.participantLimit && participantCount >= eventData.participantLimit;
+            // Get participant count - handle permission errors gracefully
+            let participantCount = 0;
+            let isFull = false;
+            try {
+              const regsQuery = query(regsRef, where("eventId", "==", docSnap.id));
+              const regsSnap = await getDocs(regsQuery);
+              participantCount = regsSnap.size;
+              isFull = eventData.participantLimit && participantCount >= eventData.participantLimit;
+            } catch (regError) {
+              console.warn(`Failed to load participant count for event ${docSnap.id}:`, regError);
+              // Continue without participant count if permission denied
+              if (regError.code === 'permission-denied') {
+                participantCount = 0;
+              }
+            }
             
             return {
               ...eventData,
@@ -48,11 +58,17 @@ const HomeEvents = memo(({ countdown1 }) => {
           return dateA - dateB;
         }).slice(0, 2);
         
-        setHomeEvents(sortedEvents);
-        setIsLoading(false);
+        if (isMounted) {
+          setHomeEvents(sortedEvents);
+          setIsLoading(false);
+        }
       } catch (error) {
         console.error("Failed to load events", error);
-        if (isMounted) setIsLoading(false);
+        if (isMounted) {
+          // Set empty array on error to prevent crashes
+          setHomeEvents([]);
+          setIsLoading(false);
+        }
       }
     };
     
@@ -162,7 +178,7 @@ const HomeEvents = memo(({ countdown1 }) => {
   );
 });
 
-const FossApp = ({ cursorMode = "car", isMobileCursor = false }) => {
+const FossApp = () => {
   // Auth
   const { user, role } = useAuth();
   
@@ -188,7 +204,7 @@ const FossApp = ({ cursorMode = "car", isMobileCursor = false }) => {
     AOS.init({ duration: 800, offset: 100, once: true });
   }, []);
 
-  // Navbar scroll effect
+  // Navbar scroll effect and scroll indicator visibility
   useEffect(() => {
     const handleScroll = () => {
       if (navbarRef.current) {
@@ -200,8 +216,21 @@ const FossApp = ({ cursorMode = "car", isMobileCursor = false }) => {
           navbarRef.current.style.boxShadow = 'none';
         }
       }
+      
+      // Show/hide scroll indicator based on scroll position (visible only at top)
+      const scrollIndicator = document.querySelector('.scroll-indicator');
+      if (scrollIndicator) {
+        if (window.scrollY === 0) {
+          scrollIndicator.classList.add('visible');
+        } else {
+          scrollIndicator.classList.remove('visible');
+        }
+      }
     };
 
+    // Check initial scroll position
+    handleScroll();
+    
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -227,10 +256,21 @@ const FossApp = ({ cursorMode = "car", isMobileCursor = false }) => {
   const handleContactSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
+    const name = formData.get("name");
+    const email = formData.get("email");
+    const message = formData.get("message") || formData.get("Message");
+    
+    // Validate inputs
+    if (!name || !email || !message) {
+      setContactStatus("error");
+      setTimeout(() => setContactStatus(null), 4000);
+      return;
+    }
+    
     const payload = {
-      name: formData.get("name"),
-      email: formData.get("email"),
-      message: formData.get("message") || formData.get("Message"),
+      name: name.trim(),
+      email: email.trim(),
+      message: message.trim(),
       createdAt: serverTimestamp(),
       source: "landing_contact",
     };
@@ -244,16 +284,10 @@ const FossApp = ({ cursorMode = "car", isMobileCursor = false }) => {
       console.error("Failed to save contact message", error);
       setContactStatus("error");
     } finally {
-      setTimeout(() => setContactStatus(null), 4000);
+      setTimeout(() => setContactStatus(null), 5000);
     }
   };
 
-  // Newsletter subscription
-  const handleNewsletterSubmit = (e) => {
-    e.preventDefault();
-    alert('Thank you for subscribing to our newsletter!');
-    e.target.reset();
-  };
 
   // Typing effect
   useEffect(() => {
@@ -270,7 +304,7 @@ const FossApp = ({ cursorMode = "car", isMobileCursor = false }) => {
         setTimeout(() => {
           setTypedText("");
           setRestart(prev => !prev);
-        }, 5000);
+        }, 3000);
       }
     };
 
@@ -414,7 +448,7 @@ const FossApp = ({ cursorMode = "car", isMobileCursor = false }) => {
       name: "Mangalya", 
       role: "Vice President",
       roleIcon: "fas fa-star",
-      photo: resolveImage("foss-community.png"),
+      photo: resolveImage("Mangalya.jpg"),
       social: {
         instagram: "janesmith",
         github: "janesmith",
@@ -425,7 +459,7 @@ const FossApp = ({ cursorMode = "car", isMobileCursor = false }) => {
       name: "Padmaja", 
       role: "Secretary",
       roleIcon: "fas fa-tasks",
-      photo: resolveImage("amc-foss-logo.png"),
+      photo: resolveImage("Padmaja.jpg"),
       social: {
         instagram: "boii__loather",
         github: "pravin",
@@ -436,7 +470,7 @@ const FossApp = ({ cursorMode = "car", isMobileCursor = false }) => {
       name: "Chandana", 
       role: "Joint-Secretary",
       roleIcon: "fas fa-code",
-      photo: resolveImage("foss-community.png"),
+      photo: resolveImage("Chandana.png"),
       social: {
         instagram: "alexj_tech",
         github: "alexj",
@@ -447,7 +481,7 @@ const FossApp = ({ cursorMode = "car", isMobileCursor = false }) => {
       name: "Ajay", 
       role: "PR",
       roleIcon: "fas fa-palette",
-      photo: resolveImage("amc-foss-logo.png"),
+      photo: resolveImage("Ajay.jpg"),
       social: {
         instagram: "sarah_designs",
         github: "sarahw",
@@ -455,10 +489,10 @@ const FossApp = ({ cursorMode = "car", isMobileCursor = false }) => {
       }
     },
     { 
-      name: "Ajay", 
-      role: "PR",
+      name: "Nihan Anoop", 
+      role: "Ofice-Bearer",
       roleIcon: "fas fa-palette",
-      photo: resolveImage("amc-foss-logo.png"),
+      photo: resolveImage("Nihan.png"),
       social: {
         instagram: "sarah_designs",
         github: "sarahw",
@@ -466,10 +500,21 @@ const FossApp = ({ cursorMode = "car", isMobileCursor = false }) => {
       }
     },
     { 
-      name: "Ajay", 
-      role: "PR",
+      name: "Ruhan", 
+      role: "Office-Bearer",
       roleIcon: "fas fa-palette",
-      photo: resolveImage("amc-foss-logo.png"),
+      photo: resolveImage("Ruhan.jpg"),
+      social: {
+        instagram: "sarah_designs",
+        github: "sarahw",
+        linkedin: "sarah-wilson"
+      }
+    },
+    { 
+      name: "SriVishny", 
+      role: "Club coordinator",
+      roleIcon: "fas fa-palette",
+      photo: resolveImage("Srivishnu.jpg"),
       social: {
         instagram: "sarah_designs",
         github: "sarahw",
@@ -477,10 +522,21 @@ const FossApp = ({ cursorMode = "car", isMobileCursor = false }) => {
       }
     }
     ,{ 
-      name: "Ajay", 
-      role: "PR",
+      name: "Bhoomish", 
+      role: "Technical Lead",
       roleIcon: "fas fa-palette",
-      photo: resolveImage("amc-foss-logo.png"),
+      photo: resolveImage("Bhoomish.jpg"),
+      social: {
+        instagram: "sarah_designs",
+        github: "sarahw",
+        linkedin: "sarah-wilson"
+      }
+    }
+    ,{ 
+      name: "Sakthi Sri Kumaran", 
+      role: "Technical Lead",
+      roleIcon: "fas fa-palette",
+      photo: resolveImage("Sakthi.jpg"),
       social: {
         instagram: "sarah_designs",
         github: "sarahw",
@@ -539,7 +595,7 @@ const FossApp = ({ cursorMode = "car", isMobileCursor = false }) => {
             <li><a href="#events" onClick={(e) => smoothScroll(e, '#events')}>Events</a></li>
             <li><a href="#projects" onClick={(e) => smoothScroll(e, '#projects')}>Projects</a></li>
             <li><a href="#team" onClick={(e) => smoothScroll(e, '#team')}>Team</a></li>
-            <li><a href="#contact" onClick={(e) => smoothScroll(e, '#contact')}>Contact</a></li>
+            
             <li className="auth-links">
               {user ? (
                 <Link 
@@ -552,7 +608,7 @@ const FossApp = ({ cursorMode = "car", isMobileCursor = false }) => {
                 <Link to="/login" className="auth-link">Login</Link>
               )}
               
-              <button className="join-btn" onClick={() => navigate('/events')}>Join Us</button>
+              <button className="join-btn" onClick={(e) => smoothScroll(e, '#contact')}>Join Us</button>
             </li>
           </ul>
         </div>
@@ -605,9 +661,6 @@ const FossApp = ({ cursorMode = "car", isMobileCursor = false }) => {
             <span className="wheel"></span>
           </span>
           <p>Scroll Down</p>
-          {!isMobileCursor && cursorMode === "car" ? (
-            <p className="hero-controls-hint">Use ↑ ↓ ← → to drive • Enter / Space to click</p>
-          ) : null}
         </div>
       </section>
 
@@ -820,7 +873,7 @@ const FossApp = ({ cursorMode = "car", isMobileCursor = false }) => {
                   {contactStatus === "saving" ? "Sending..." : "Send Message"}
                 </button>
                 {contactStatus === "success" ? (
-                  <p className="contact-status success">Message stored successfully. We will reach out soon!</p>
+                  <p className="contact-status success">Message Sent successfully. We will reach out soon!</p>
                 ) : null}
                 {contactStatus === "error" ? (
                   <p className="contact-status error">Unable to send right now. Please try again.</p>

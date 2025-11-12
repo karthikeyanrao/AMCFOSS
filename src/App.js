@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import 'aos/dist/aos.css';
 import 'font-awesome/css/font-awesome.min.css';
@@ -12,30 +12,15 @@ import OfficeDashboard from './pages/OfficeDashboard';
 import Events from './pages/Events';
 import EventRegistration from './pages/EventRegistration';
 import ProtectedRoute from './components/ProtectedRoute';
-import CarCursor from './components/CarCursor';
+import CircleCursor from './components/CircleCursor';
 
 const App = () => {
-  const [isMobileCursor, setIsMobileCursor] = useState(false);
-
-  useEffect(() => {
-    const evaluate = () => {
-      if (typeof window === 'undefined') {
-        setIsMobileCursor(false);
-        return;
-      }
-      setIsMobileCursor(window.innerWidth < 768);
-    };
-    evaluate();
-    window.addEventListener('resize', evaluate);
-    return () => window.removeEventListener('resize', evaluate);
-  }, []);
-
   return (
     <AuthProvider>
       <BrowserRouter>
-        <CarCursor mode="car" isMobile={isMobileCursor} />
+        <CircleCursor />
         <Routes>
-          <Route path="/" element={<FossApp cursorMode="car" isMobileCursor={isMobileCursor} />} />
+          <Route path="/" element={<FossApp />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route

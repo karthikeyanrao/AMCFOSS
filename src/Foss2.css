@@ -22,11 +22,60 @@ body {
     color: var(--text-color);
     background-color: var(--dark-bg);
     overflow-x: hidden;
+    cursor: none;
 }
 
-body.hide-system-cursor,
-body.hide-system-cursor * {
-    cursor: none !important;
+/* Circle Cursor Styles */
+.circle-cursor {
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.cursor-outer {
+    width: 40px;
+    height: 40px;
+    border: 2px solid rgba(0, 255, 136, 0.8);
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 
+        0 0 20px rgba(0, 255, 136, 0.6),
+        0 0 40px rgba(0, 255, 136, 0.4),
+        inset 0 0 20px rgba(0, 255, 136, 0.2);
+    animation: cursor-pulse 2s ease-in-out infinite;
+}
+
+.cursor-inner {
+    width: 8px;
+    height: 8px;
+    background: rgba(0, 255, 136, 1);
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 
+        0 0 10px rgba(0, 255, 136, 0.9),
+        0 0 20px rgba(0, 255, 136, 0.7),
+        0 0 30px rgba(0, 255, 136, 0.5);
+}
+
+@keyframes cursor-pulse {
+    0%, 100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.8;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.1);
+        opacity: 1;
+    }
+}
+
+/* Hide cursor on interactive elements */
+a, button, input, textarea, select, [role="button"], [onclick] {
+    cursor: none;
 }
 
 /* Navbar Styles */
@@ -324,18 +373,19 @@ body.hide-system-cursor * {
 
 .hero-stats {
     display: flex;
-    gap: 4rem;
+    gap: 2rem;
     justify-content: center;
-    margin-bottom: 4rem;
+    margin-bottom: 3rem;
     flex-wrap: wrap;
-    padding: 2rem 1rem;
+    padding: 1rem 1rem;
     background: rgba(255, 255, 255, 0.03);
     backdrop-filter: blur(10px);
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    max-width: 800px;
+    max-width: 700px;
+    margin-top: -2rem;
     margin-left: auto;
-    margin-right: auto;
+    margin-right:auto;
 }
 
 .hero-stat {
@@ -442,17 +492,27 @@ body.hide-system-cursor * {
 }
 
 .primary-btn {
-    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
-    color: var(--text-color);
-    padding: 1rem 2rem;
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.9), rgba(0, 212, 255, 0.9));
+    color: var(--dark-bg);
+    padding: 1.1rem 2.2rem;
     border-radius: 25px;
-    border: none;
-    font-weight: 600;
+    border: 2px solid rgba(0, 255, 136, 0.5);
+    font-weight: 700;
+    font-size: 1rem;
     cursor: pointer;
-    transition: var(--transition);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
-    box-shadow: 0 5px 15px rgba(0, 255, 136, 0.2);
+    box-shadow: 
+        0 6px 20px rgba(0, 255, 136, 0.4),
+        0 0 30px rgba(0, 255, 136, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
 }
 
 .primary-btn::before {
@@ -462,37 +522,81 @@ body.hide-system-cursor * {
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
     transition: 0.5s;
 }
 
 .primary-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 
+        0 10px 35px rgba(0, 255, 136, 0.5),
+        0 0 50px rgba(0, 255, 136, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    background: linear-gradient(135deg, rgba(0, 255, 136, 1), rgba(0, 212, 255, 1));
+    border-color: rgba(0, 255, 136, 0.8);
 }
 
 .primary-btn:hover::before {
     left: 100%;
 }
 
+.primary-btn:active {
+    transform: translateY(-2px) scale(0.98);
+}
+
 .secondary-btn {
     background: transparent;
     color: var(--accent-color);
-    padding: 1rem 2rem;
+    padding: 1.1rem 2.2rem;
     border-radius: 25px;
     border: 2px solid var(--accent-color);
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 1rem;
     cursor: pointer;
-    transition: var(--transition);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
+    box-shadow: 
+        0 0 20px rgba(0, 255, 136, 0.2),
+        inset 0 0 20px rgba(0, 255, 136, 0.05);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.secondary-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(0, 255, 136, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.4s, height 0.4s;
 }
 
 .secondary-btn:hover {
     background: var(--accent-color);
     color: var(--dark-bg);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 
+        0 10px 35px rgba(0, 255, 136, 0.4),
+        0 0 40px rgba(0, 255, 136, 0.2);
+    border-color: var(--accent-color);
+}
+
+.secondary-btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.secondary-btn:active {
+    transform: translateY(-2px) scale(0.98);
 }
 
 .btn:hover {
@@ -1357,7 +1461,7 @@ body.hide-system-cursor * {
 
 .social-links {
     display: flex;
-    gap: 1rem;
+    gap: 2rem;
     justify-content: center;
     margin-top: 0.5rem;
     order: 1;
@@ -1678,6 +1782,7 @@ body.hide-system-cursor * {
     border-radius: 50%;
     background: var(--card-bg);
     display: flex;
+    margin-top: -2rem;
     align-items: center;
     justify-content: center;
     color: var(--text-color);
@@ -1761,6 +1866,18 @@ body.hide-system-cursor * {
     background: rgba(255, 99, 99, 0.18);
     color: #ffaaaa;
     border: 1px solid rgba(255, 99, 99, 0.35);
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Contact Slider */
@@ -2159,51 +2276,149 @@ body.hide-system-cursor * {
         padding: 0 1rem;
     }
 
+    .contact-slider {
+        flex-direction: column;
+        gap: 2rem;
+        width: 100%;
+    }
+
+    .contact-info {
+        padding: 1.5rem;
+        width: 100%;
+    }
+
     .contact-form {
         padding: 1.5rem;
+        max-width: 100%;
+    }
+
+    .contact-form input,
+    .contact-form textarea {
+        font-size: 0.9rem;
+        padding: 0.85rem;
+    }
+
+    .contact-form button {
+        width: 100%;
+        padding: 1rem;
+        font-size: 0.95rem;
     }
 
     .info-item {
-        padding: 0.8rem 1.5rem;
+        padding: 0.8rem 1.2rem;
+        font-size: 0.85rem;
+        flex-wrap: wrap;
+    }
+
+    .social-links {
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
     }
 
     .social-links a {
-        width: 40px;
-        height: 40px;
+        width: 45px;
+        height: 45px;
         font-size: 1.2rem;
+    }
+
+    /* Buttons on Mobile - Make them more visible */
+    .primary-btn,
+    .secondary-btn {
+        padding: 1rem 1.5rem;
+        font-size: 0.9rem;
+        min-width: 200px;
+        width: auto;
+    }
+
+    .hero-buttons .btn {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* Scroll indicator smaller on mobile */
+    .scroll-indicator {
+        bottom: 0.5rem;
+    }
+
+    .scroll-indicator p {
+        font-size: 0.6rem;
+    }
+
+    .mouse {
+        width: 18px;
+        height: 28px;
+    }
+
+    .wheel {
+        width: 2.5px;
+        height: 5px;
+    }
+
+    /* Contact status messages */
+    .contact-status {
+        font-size: 0.8rem;
+        padding: 0.6rem 0.9rem;
     }
 }
 
 /* Scroll Indicator */
 .scroll-indicator {
     position: absolute;
-    bottom: 2rem;
+    bottom: 11rem;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.3rem;
+    z-index: 3;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.scroll-indicator.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.scroll-indicator p {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 1);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.8), 0 0 20px rgba(0, 255, 136, 0.5);
+    font-weight: 600;
 }
 
 .mouse {
-    width: 30px;
-    height: 50px;
-    border: 2px solid var(--text-color);
-    border-radius: 15px;
+    width: 20px;
+    height: 32px;
+    border: 2px solid rgba(255, 255, 255, 1);
+    border-radius: 12px;
     position: relative;
+    opacity: 1;
+    box-shadow: 
+        0 0 15px rgba(0, 255, 136, 0.8),
+        0 0 30px rgba(0, 255, 136, 0.5),
+        inset 0 0 10px rgba(0, 255, 136, 0.3);
+    filter: drop-shadow(0 0 8px rgba(0, 255, 136, 0.6));
 }
 
 .wheel {
-    width: 4px;
-    height: 8px;
-    background: var(--text-color);
+    width: 3px;
+    height: 6px;
+    background: rgba(255, 255, 255, 1);
     position: absolute;
-    top: 8px;
+    top: 6px;
     left: 50%;
     transform: translateX(-50%);
     border-radius: 2px;
     animation: scroll 2s infinite;
+    box-shadow: 0 0 8px rgba(0, 255, 136, 0.8);
+    filter: drop-shadow(0 0 4px rgba(0, 255, 136, 0.6));
 }
 
 @keyframes scroll {
