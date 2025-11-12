@@ -7,8 +7,8 @@
     "@fortawesome/free-brands-svg-icons": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/react-fontawesome": "^0.2.2",
-    "autoprefixer": "^10.4.20",
     "aos": "^2.3.4",
+    "autoprefixer": "^10.4.20",
     "cra-template": "1.2.0",
     "firebase": "^10.14.0",
     "font-awesome": "^4.7.0",
@@ -44,5 +44,10 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@jridgewell/sourcemap-codec": "^1.5.5",
+    "@rollup/plugin-terser": "^0.4.4"
   }
 }
