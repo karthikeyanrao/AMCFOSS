@@ -28,6 +28,11 @@ const HomeEvents = memo(({ countdown1 }) => {
           snap.docs.map(async (docSnap) => {
             const eventData = { id: docSnap.id, ...docSnap.data() };
             
+            // Check if event has ended
+            const now = new Date().getTime();
+            const eventDate = eventData.date ? new Date(eventData.date).getTime() : null;
+            const isEnded = eventDate ? now > eventDate : false;
+            
             // Get participant count - handle permission errors gracefully
             let participantCount = 0;
             let isFull = false;
@@ -48,14 +53,27 @@ const HomeEvents = memo(({ countdown1 }) => {
               ...eventData,
               participantCount,
               isFull,
+              isEnded,
             };
           })
         );
         
+        // Sort events: upcoming first (by date ascending), then ended (by date descending)
         const sortedEvents = eventsList.sort((a, b) => {
           const dateA = a.date ? new Date(a.date).getTime() : 0;
           const dateB = b.date ? new Date(b.date).getTime() : 0;
-          return dateA - dateB;
+          const now = new Date().getTime();
+          const aEnded = a.isEnded || (dateA && now > dateA);
+          const bEnded = b.isEnded || (dateB && now > dateB);
+          
+          // If both ended or both upcoming, sort by date
+          if (aEnded === bEnded) {
+            // Ended events: most recent first (descending)
+            // Upcoming events: soonest first (ascending)
+            return aEnded ? dateB - dateA : dateA - dateB;
+          }
+          // Upcoming events come before ended events
+          return aEnded ? 1 : -1;
         }).slice(0, 2);
         
         if (isMounted) {
@@ -135,7 +153,12 @@ const HomeEvents = memo(({ countdown1 }) => {
               <h3>{event.title}</h3>
               <p>{event.description || "Join us for an amazing event!"}</p>
               <div className="event-actions">
-                {event.isFull ? (
+                {event.isEnded ? (
+                  <button className="primary-btn event-ended-btn" disabled>
+                    <i className="fas fa-calendar-times" style={{ marginRight: '0.5rem' }}></i>
+                    Event Ended
+                  </button>
+                ) : event.isFull ? (
                   <button className="primary-btn event-full-btn" disabled>
                     Event Full
                   </button>
@@ -151,8 +174,11 @@ const HomeEvents = memo(({ countdown1 }) => {
                       <i className="fas fa-users"></i>
                       <span>{event.participantCount || 0}/{event.participantLimit}</span>
                     </div>
-                    {event.isFull && (
+                    {event.isFull && !event.isEnded && (
                       <div className="event-full-badge">Full</div>
+                    )}
+                    {event.isEnded && (
+                      <div className="event-ended-badge">Ended</div>
                     )}
                   </div>
                 )}
@@ -434,9 +460,9 @@ const FossApp = () => {
       roleIcon: "fas fa-crown",
       photo: resolveImage("Maangalya.jpg"),
       social: {
-        instagram: "janesmith",
-        github: "janesmith",
-        linkedin: "jane-smith"
+        instagram: "maangalya_senthilkumar",
+        github: "Maangalya K S",
+        linkedin: "Maangalya-senthilkumar"
       }
     },
     { 
@@ -445,9 +471,9 @@ const FossApp = () => {
       roleIcon: "fas fa-crown",
       photo: resolveImage("Padmaja.jpg"),
       social: {
-        instagram: "boii__loather",
-        github: "pravin",
-        linkedin: "pravin-dharsaun"
+        instagram: "_padmaja_04",
+        github: "PadmajaNagarajan",
+        linkedin: "padmaja-nagarajan-07b40a28a"
       }
     },
     { 
@@ -456,9 +482,9 @@ const FossApp = () => {
       roleIcon: "fas fa-crown",
       photo: resolveImage("Chandana.png"),
       social: {
-        instagram: "alexj_tech",
-        github: "alexj",
-        linkedin: "alex-johnson"
+        instagram: "chand.naaaa",
+        github: "chandanakoduru",
+        linkedin: "Koduru Chandana"
       }
     },
     { 
@@ -478,9 +504,9 @@ const FossApp = () => {
       roleIcon: "fas fa-star",
       photo: resolveImage("Nihan.png"),
       social: {
-        instagram: "sarah_designs",
-        github: "sarahw",
-        linkedin: "sarah-wilson"
+        instagram: "nihxn_ad05",
+        github: "nihan-98716",
+        linkedin: "m-nihan-anoop"
       }
     },
     { 
@@ -489,9 +515,9 @@ const FossApp = () => {
       roleIcon: "fas fa-star",
       photo: resolveImage("Ruhan.jpg"),
       social: {
-        instagram: "sarah_designs",
+        instagram: "ruhan_thangamani_22",
         github: "sarahw",
-        linkedin: "sarah-wilson"
+        linkedin: "Ruhan Thangamani"
       }
     },
     { 
@@ -500,9 +526,9 @@ const FossApp = () => {
       roleIcon: "fas fa-code",
       photo: resolveImage("Srivishnu.jpg"),
       social: {
-        instagram: "sarah_designs",
-        github: "sarahw",
-        linkedin: "sarah-wilson"
+        instagram: "srivishnu2805",
+        github: "srivishnu2805",
+        linkedin: "srivishnu-t"
       }
     }
     ,{ 
@@ -522,9 +548,9 @@ const FossApp = () => {
       roleIcon: "fas fa-code",
       photo: resolveImage("Sakthi.jpg"),
       social: {
-        instagram: "sarah_designs",
-        github: "sarahw",
-        linkedin: "sarah-wilson"
+        instagram: "sakthi0616",
+        github: "Sakthi0616",
+        linkedin: "sakthisrikumaran"
       }
     }
   ];
@@ -770,28 +796,40 @@ const FossApp = () => {
             position = 'nearby';
           }
           
+          
+          const isActive = diff === 0;
+          const shouldShow = isMobile ? isActive : true;
+          
           // Calculate scale and opacity based on distance
           const absDiff = Math.abs(diff);
           const scale = absDiff === 0 ? 1 : absDiff === 1 ? 0.85 : Math.max(0.5, 1 - absDiff * 0.12);
-          const opacity = absDiff === 0 ? 1 : absDiff === 1 ? 0.7 : Math.max(0.2, 0.6 - absDiff * 0.1);
+          const opacity = isMobile ? (isActive ? 1 : 0) : (absDiff === 0 ? 1 : absDiff === 1 ? 0.7 : Math.max(0.2, 0.6 - absDiff * 0.1));
           const blur = absDiff === 0 ? 0 : absDiff === 1 ? 2 : Math.min(6, absDiff * 1.5);
           
           // Calculate horizontal offset - use the normalized diff
           const offsetX = diff * 120; // 120% per card for better spacing
           
+          if (!shouldShow) {
+            return null;
+          }
+          
           return (
             <div 
               key={index} 
-              className={`team-card ${position}`}
+              className={`team-card ${position} ${isActive ? 'current-active' : ''}`}
               style={{
-                transform: `translate(calc(-50% + ${offsetX}%), -50%) scale(${scale})`,
+                transform: isMobile 
+                  ? `translate(-50%, -50%) scale(1)` 
+                  : `translate(calc(-50% + ${offsetX}%), -50%) scale(${scale})`,
                 opacity: opacity,
-                pointerEvents: absDiff <= 1 ? 'auto' : 'none',
-                zIndex: totalMembers - absDiff,
-                filter: `blur(${blur}px)`,
-                transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+                pointerEvents: isMobile ? (isActive ? 'auto' : 'none') : (absDiff <= 1 ? 'auto' : 'none'),
+                zIndex: isMobile ? (isActive ? 10 : 0) : (totalMembers - absDiff),
+                filter: isMobile ? (isActive ? 'blur(0)' : 'blur(4px)') : `blur(${blur}px)`,
+                transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                display: shouldShow ? 'block' : 'none'
               }}
             >
+             
               <div className="member-image-wrapper">
                 <img src={member.photo} alt={member.name} className="shine-effect" />
                 <div className="member-overlay">
@@ -860,10 +898,10 @@ const FossApp = () => {
                   <p>Amrita Vishwa Vidyapeetham, Chennai Campus</p>
                 </div>
                 <div className="social-links">
-                  <a href="#"><i className="fab fa-facebook"></i></a>
                   <a href="https://discord.gg/4vsg5Fpw"><i className="fab fa-discord"></i></a>
                   <a href="https://instagram.com/amcfoss"><i className="fab fa-instagram"></i></a>
                   <a href="https://linkedin.com/company/amcfoss"><i className="fab fa-linkedin"></i></a>
+                  <a href="https://chat.whatsapp.com/JNjiwWwXNI77EUznWUwtUX"><i className="fab fa-whatsapp"></i></a>
                 </div>
               </div>
 

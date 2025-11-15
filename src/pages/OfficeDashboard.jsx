@@ -27,9 +27,12 @@ export default function OfficeDashboard() {
   const [participants, setParticipants] = useState([]);
   const [showParticipants, setShowParticipants] = useState(false);
   const [loadingParticipants, setLoadingParticipants] = useState(false);
+  const [allTasks, setAllTasks] = useState([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
 
   const eventsRef = useMemo(() => collection(db, "events"), []);
   const regsRef = useMemo(() => collection(db, "event_registrations"), []);
+  const tasksRef = useMemo(() => collection(db, "tasks"), []);
 
   const loadEvents = async () => {
     setLoading(true);
@@ -59,8 +62,31 @@ export default function OfficeDashboard() {
     }
   };
 
+  const loadTasks = async () => {
+    setLoadingTasks(true);
+    try {
+      // Load ALL tasks from all mentors
+      const snap = await getDocs(tasksRef);
+      const tasksList = snap.docs.map((docSnap) => {
+        const taskData = { id: docSnap.id, ...docSnap.data() };
+        // Check if deadline has passed
+        const now = new Date().getTime();
+        const deadline = taskData.deadline ? new Date(taskData.deadline).getTime() : null;
+        const isEnded = deadline ? now > deadline : false;
+        return {
+          ...taskData,
+          isEnded,
+        };
+      });
+      setAllTasks(tasksList);
+    } finally {
+      setLoadingTasks(false);
+    }
+  };
+
   useEffect(() => {
     loadEvents();
+    loadTasks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -115,10 +141,10 @@ export default function OfficeDashboard() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#03060d] text-white">
       <div className="absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.18),transparent_55%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(34,197,94,0.2),transparent_55%)]" />
-        <div className="absolute -left-24 top-16 h-[30rem] w-[30rem] rounded-full bg-indigo-500/20 blur-3xl" />
-        <div className="absolute -right-24 bottom-10 h-[26rem] w-[26rem] rounded-full bg-emerald-500/25 blur-3xl" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(0,255,136,0.10),transparent_55%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(46,204,113,0.12),transparent_55%)]" />
+        <div className="absolute -left-24 top-16 h-[30rem] w-[30rem] rounded-full bg-[#00ff88]/15 blur-3xl" />
+        <div className="absolute -right-24 bottom-10 h-[26rem] w-[26rem] rounded-full bg-[#2ecc71]/20 blur-3xl" />
       </div>
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col px-6 py-16 lg:px-12">
@@ -138,7 +164,7 @@ export default function OfficeDashboard() {
             </Link>
             <button
               onClick={logout}
-              className="self-start rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-slate-300 transition hover:border-indigo-400/50 hover:text-indigo-200"
+              className="self-start rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-slate-300 transition hover:border-[#00ff88]/50 hover:text-[#00ff88]"
             >
               Sign Out
             </button>
@@ -152,9 +178,9 @@ export default function OfficeDashboard() {
             transition={{ duration: 0.5, ease: "easeOut" }}
             className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur"
           >
-            <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-br from-indigo-500/20 via-brand-500/15 to-emerald-500/10 blur-3xl" />
+            <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-br from-[#00ff88]/20 via-[#2ecc71]/15 to-[#27ae60]/10 blur-3xl" />
             <div className="relative z-10">
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-xs uppercase tracking-[0.35em] text-indigo-200/80">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-xs uppercase tracking-[0.35em] text-[#00ff88]">
                 Event Ledger
               </div>
               <div className="flex flex-col gap-5">
@@ -174,11 +200,11 @@ export default function OfficeDashboard() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4 }}
-                    className="group flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 px-6 py-6 transition hover:border-indigo-300/40 hover:bg-white/10 md:flex-row md:items-center md:justify-between"
+                    className="group flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 px-6 py-6 transition hover:border-[#00ff88]/40 hover:bg-white/10 md:flex-row md:items-center md:justify-between"
                   >
                     <div>
                       <div className="text-lg font-semibold text-white">{event.title}</div>
-                      <div className="mt-1 text-xs uppercase tracking-[0.25em] text-indigo-200/80">{event.date}</div>
+                      <div className="mt-1 text-xs uppercase tracking-[0.25em] text-[#00ff88]">{event.date}</div>
                       {event.description ? (
                         <p className="mt-3 max-w-xl text-sm text-slate-300/90">{event.description}</p>
                       ) : null}
@@ -194,7 +220,7 @@ export default function OfficeDashboard() {
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() => loadParticipants(event.id)}
-                        className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-200 transition hover:border-indigo-300/60 hover:text-indigo-200"
+                        className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-200 transition hover:border-[#00ff88]/60 hover:text-[#00ff88]"
                       >
                         View Participants
                       </button>
@@ -217,7 +243,7 @@ export default function OfficeDashboard() {
             transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
             className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#070b18]/95 p-8 shadow-2xl backdrop-blur"
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 via-brand-500/15 to-emerald-500/20 opacity-70" />
+            <div className="absolute inset-0 bg-gradient-to-br from-[#00ff88]/20 via-[#2ecc71]/15 to-[#27ae60]/20 opacity-70" />
             <div className="relative z-10">
               <h2 className="text-xl font-semibold text-white">Launch New Event</h2>
               <p className="mt-2 text-xs text-slate-400">
@@ -230,7 +256,7 @@ export default function OfficeDashboard() {
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Zero to Production Workshop"
-                    className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-indigo-400/70 focus:bg-white/15 focus:ring-2 focus:ring-indigo-400/40"
+                    className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-[#00ff88]/70 focus:bg-white/15 focus:ring-2 focus:ring-[#00ff88]/40"
                     required
                   />
                 </div>
@@ -240,7 +266,7 @@ export default function OfficeDashboard() {
                     type="date"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-indigo-400/70 focus:bg-white/15 focus:ring-2 focus:ring-indigo-400/40"
+                    className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-[#00ff88]/70 focus:bg-white/15 focus:ring-2 focus:ring-[#00ff88]/40"
                     required
                   />
                 </div>
@@ -261,11 +287,11 @@ export default function OfficeDashboard() {
                     value={participantLimit}
                     onChange={(e) => setParticipantLimit(e.target.value)}
                     placeholder="Leave empty for unlimited"
-                    className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-indigo-400/70 focus:bg-white/15 focus:ring-2 focus:ring-indigo-400/40"
+                    className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-[#00ff88]/70 focus:bg-white/15 focus:ring-2 focus:ring-[#00ff88]/40"
                   />
                 </div>
                 <button
-                  className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-500 via-brand-500 to-emerald-500 px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-lg shadow-indigo-500/30 transition hover:shadow-indigo-500/45"
+                  className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-r from-[#00ff88] via-[#2ecc71] to-[#27ae60] px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-[#1a1a2e] shadow-lg shadow-[#00ff88]/30 transition hover:shadow-[#00ff88]/45 font-bold"
                 >
                   <span className="absolute inset-0 translate-y-full bg-white/20 transition duration-300 group-hover:translate-y-0" />
                   <span className="relative">Publish Event</span>
@@ -274,6 +300,94 @@ export default function OfficeDashboard() {
             </div>
           </motion.div>
         </div>
+
+        {/* Mentor Tasks Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
+          className="mt-12 overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur"
+        >
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-xl font-semibold text-white">All Mentor Tasks</h3>
+              <p className="text-xs text-slate-400">Track all tasks created by mentors across all domains.</p>
+            </div>
+            {loadingTasks ? <span className="text-xs uppercase tracking-[0.35em] text-[#00ff88]">Refreshing…</span> : null}
+          </div>
+          <div className="mt-6 space-y-4">
+            {allTasks.length === 0 && !loadingTasks ? (
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-10 text-center text-sm text-slate-300">
+                No tasks created yet by mentors.
+              </div>
+            ) : null}
+            {allTasks.map((task) => {
+              const deadlineDate = task.deadline ? new Date(task.deadline) : null;
+              const deadlineFormatted = deadlineDate ? deadlineDate.toLocaleString(undefined, { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              }) : "Not set";
+              
+              return (
+                <div
+                  key={task.id}
+                  className="group flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 px-6 py-5 transition hover:border-[#00ff88]/40 hover:bg-white/10"
+                >
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div className="flex-1">
+                      <div className="mb-2 flex items-center gap-3">
+                        {task.domain && (
+                          <span className="rounded-full border border-[#00ff88]/40 bg-[#00ff88]/10 px-3 py-1 text-xs font-semibold text-[#00ff88]">
+                            {task.domain}
+                          </span>
+                        )}
+                        <span className="text-lg font-medium text-white">- {task.title}</span>
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-slate-400">
+                        <div>
+                          <span className="text-slate-500">Deadline: </span>
+                          <span className="text-white">{deadlineFormatted}</span>
+                        </div>
+                        {task.formsLink && (
+                          <a
+                            href={task.formsLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="rounded-full border border-[#00ff88]/40 bg-[#00ff88]/10 px-3 py-1 text-[#00ff88] transition hover:border-[#00ff88]/60 hover:bg-[#00ff88]/20"
+                          >
+                            <i className="fas fa-external-link-alt mr-1"></i>View Response
+                          </a>
+                        )}
+                        {task.createdByName && (
+                          <span>
+                            Created by: <span className="text-[#2ecc71]">{task.createdByName}</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 uppercase tracking-[0.3em] text-slate-400">
+                        {task.id.slice(0, 6)}
+                      </span>
+                      {task.isEnded ? (
+                        <span className="rounded-full border border-gray-400/40 bg-gray-500/10 px-3 py-1 text-gray-200/80">
+                          Ended
+                        </span>
+                      ) : (
+                        <span className="rounded-full border border-[#00ff88]/40 bg-[#00ff88]/10 px-3 py-1 text-[#00ff88]">
+                          Active
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
 
         {/* Participants Modal */}
         {showParticipants && (

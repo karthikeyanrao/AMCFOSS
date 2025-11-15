@@ -43,7 +43,7 @@ export default function Register() {
       footer={
         <span>
           Already verified?{" "}
-          <Link to="/login" className="text-emerald-300 hover:text-emerald-200">
+          <Link to="/login" className="text-[#00ff88] hover:text-[#2ecc71]">
             Sign in
           </Link>
         </span>
@@ -61,7 +61,7 @@ export default function Register() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:bg-white/10 focus:ring-2 focus:ring-emerald-400/50"
+            className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-[#00ff88]/70 focus:bg-white/10 focus:ring-2 focus:ring-[#00ff88]/50"
             placeholder="you@amrita.edu"
             required
           />
@@ -73,7 +73,7 @@ export default function Register() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:bg-white/10 focus:ring-2 focus:ring-emerald-400/50"
+              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-[#00ff88]/70 focus:bg-white/10 focus:ring-2 focus:ring-[#00ff88]/50"
               placeholder="Minimum 6 characters"
               required
               minLength={6}
@@ -85,7 +85,7 @@ export default function Register() {
               type="password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:bg-white/10 focus:ring-2 focus:ring-emerald-400/50"
+              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-[#00ff88]/70 focus:bg-white/10 focus:ring-2 focus:ring-[#00ff88]/50"
               placeholder="Retype password"
               required
               minLength={6}
@@ -95,7 +95,7 @@ export default function Register() {
         <button
           type="submit"
           disabled={loading}
-          className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-500 via-brand-500 to-indigo-500 px-6 py-3 text-sm font-semibold uppercase tracking-[0.25em] text-white shadow-lg shadow-emerald-500/30 transition focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-60"
+          className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-[#00ff88] via-[#2ecc71] to-[#27ae60] px-6 py-3 text-sm font-semibold uppercase tracking-[0.25em] text-[#1a1a2e] shadow-lg shadow-[#00ff88]/30 transition focus:outline-none focus:ring-2 focus:ring-[#00ff88] focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-60 font-bold"
         >
           <span className="absolute inset-0 translate-y-full bg-white/20 transition duration-300 group-hover:translate-y-0" />
           <span className="relative">{loading ? "Creating..." : "Create Account"}</span>

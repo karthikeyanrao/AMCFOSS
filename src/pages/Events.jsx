@@ -22,6 +22,11 @@ export default function Events() {
           snap.docs.map(async (docSnap) => {
             const eventData = { id: docSnap.id, ...docSnap.data() };
             
+            // Check if event has ended
+            const now = new Date().getTime();
+            const eventDate = eventData.date ? new Date(eventData.date).getTime() : null;
+            const isEnded = eventDate ? now > eventDate : false;
+            
             // Get participant count - handle permission errors gracefully
             let participantCount = 0;
             let isFull = false;
@@ -42,15 +47,27 @@ export default function Events() {
               ...eventData,
               participantCount,
               isFull,
+              isEnded,
             };
           })
         );
         
-        // Sort events by date
+        // Sort events: upcoming first (by date ascending), then ended (by date descending)
         const sortedEvents = eventsList.sort((a, b) => {
           const dateA = a.date ? new Date(a.date).getTime() : 0;
           const dateB = b.date ? new Date(b.date).getTime() : 0;
-          return dateA - dateB;
+          const now = new Date().getTime();
+          const aEnded = a.isEnded || (dateA && now > dateA);
+          const bEnded = b.isEnded || (dateB && now > dateB);
+          
+          // If both ended or both upcoming, sort by date
+          if (aEnded === bEnded) {
+            // Ended events: most recent first (descending)
+            // Upcoming events: soonest first (ascending)
+            return aEnded ? dateB - dateA : dateA - dateB;
+          }
+          // Upcoming events come before ended events
+          return aEnded ? 1 : -1;
         });
         
         setEvents(sortedEvents);
@@ -140,7 +157,11 @@ export default function Events() {
                 <div className="event-details-modern">
                   <div className="event-header-modern">
                     <h2 className="event-title-modern">{event.title}</h2>
-                    <span className="event-badge-modern">On Campus</span>
+                    {event.isEnded ? (
+                      <span className="event-badge-modern event-ended-badge-modern">Ended</span>
+                    ) : (
+                      <span className="event-badge-modern">On Campus</span>
+                    )}
                   </div>
                   {event.description ? (
                     <p className="event-description-modern">{event.description}</p>
@@ -156,12 +177,20 @@ export default function Events() {
                           <i className="fas fa-users"></i>
                           <span>{event.participantCount || 0}/{event.participantLimit}</span>
                         </div>
-                        {event.isFull && (
+                        {event.isFull && !event.isEnded && (
                           <div className="event-full-modern">Full</div>
+                        )}
+                        {event.isEnded && (
+                          <div className="event-ended-badge-modern-inline">Ended</div>
                         )}
                       </div>
                     )}
-                    {event.isFull ? (
+                    {event.isEnded ? (
+                      <button className="register-btn-modern disabled event-ended-btn-modern" disabled>
+                        <i className="fas fa-calendar-times"></i>
+                        Event Ended
+                      </button>
+                    ) : event.isFull ? (
                       <button className="register-btn-modern disabled" disabled>
                         Event Full
                       </button>

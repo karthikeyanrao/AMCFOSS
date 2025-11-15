@@ -6,26 +6,26 @@ export default function AuthLayout({ title, subtitle, children, footer }) {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050910] text-white">
       <div className="absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.16),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(16,185,129,0.18),transparent_45%)]" />
-        <div className="absolute -top-32 -right-24 h-96 w-96 rounded-full bg-brand-600/40 blur-3xl" />
-        <div className="absolute -bottom-36 -left-24 h-[28rem] w-[28rem] rounded-full bg-emerald-500/40 blur-3xl" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(0,255,136,0.10),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(46,204,113,0.12),transparent_45%)]" />
+        <div className="absolute -top-32 -right-24 h-96 w-96 rounded-full bg-[#2ecc71]/30 blur-3xl" />
+        <div className="absolute -bottom-36 -left-24 h-[28rem] w-[28rem] rounded-full bg-[#00ff88]/30 blur-3xl" />
       </div>
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col px-6 py-10 lg:px-10">
         <header className="mb-10 flex items-center justify-between">
           <Link to="/" className="group flex items-center gap-3 text-lg font-semibold tracking-wide">
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-emerald-500 text-xl shadow-lg shadow-brand-600/20 transition group-hover:scale-105">
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#00ff88] to-[#2ecc71] text-xl shadow-lg shadow-[#00ff88]/20 transition group-hover:scale-105">
               ⚙️
             </span>
             <span className="flex flex-col leading-tight">
               <span className="uppercase text-xs font-semibold tracking-[0.4em] text-slate-400">AMC FOSS</span>
-              <span className="text-emerald-300 group-hover:text-emerald-200">Open Source Collective</span>
+              <span className="text-[#00ff88] group-hover:text-[#2ecc71]">Open Source Collective</span>
             </span>
           </Link>
           <Link
             to="/events"
-            className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white transition hover:border-brand-400/60 hover:text-brand-200"
+            className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white transition hover:border-[#00ff88]/60 hover:text-[#00ff88]"
           >
             View Events
           </Link>
@@ -38,10 +38,10 @@ export default function AuthLayout({ title, subtitle, children, footer }) {
             transition={{ duration: 0.6, ease: "easeOut" }}
             className="relative hidden overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-10 shadow-2xl lg:flex"
           >
-            <div className="absolute -left-12 -top-24 h-64 w-64 rounded-full bg-brand-500/40 blur-3xl" />
-            <div className="absolute -right-16 -bottom-24 h-80 w-80 rounded-full bg-emerald-500/30 blur-3xl" />
+            <div className="absolute -left-12 -top-24 h-64 w-64 rounded-full bg-[#2ecc71]/30 blur-3xl" />
+            <div className="absolute -right-16 -bottom-24 h-80 w-80 rounded-full bg-[#00ff88]/25 blur-3xl" />
             <div className="relative z-10 flex flex-col justify-end">
-              <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.3em] text-emerald-200">
+              <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.3em] text-[#00ff88]">
                 Built with passion
               </span>
               <h2 className="mb-4 text-4xl font-semibold leading-tight text-white">
@@ -61,7 +61,7 @@ export default function AuthLayout({ title, subtitle, children, footer }) {
                     key={item.title}
                     className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200/90 backdrop-blur"
                   >
-                    <div className="mb-2 text-emerald-200/90">{item.title}</div>
+                    <div className="mb-2 text-[#00ff88]">{item.title}</div>
                     <p className="text-xs text-slate-400">{item.desc}</p>
                   </div>
                 ))}

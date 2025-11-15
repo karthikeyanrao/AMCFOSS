@@ -12,6 +12,7 @@ export default function EventRegistration() {
   const [loading, setLoading] = useState(false);
   const [participantCount, setParticipantCount] = useState(0);
   const [isFull, setIsFull] = useState(false);
+  const [isEnded, setIsEnded] = useState(false);
   const regsRef = useMemo(() => collection(db, "event_registrations"), []);
   const [name, setName] = useState("");
   const [rollNo, setRollNo] = useState("");
@@ -30,6 +31,11 @@ export default function EventRegistration() {
         if (snap.exists()) {
           const eventData = { id: snap.id, ...snap.data() };
           
+          // Check if event has ended
+          const now = new Date().getTime();
+          const eventDate = eventData.date ? new Date(eventData.date).getTime() : null;
+          const ended = eventDate ? now > eventDate : false;
+          
           // Get participant count
           const regsQuery = query(regsRef, where("eventId", "==", id));
           const regsSnap = await getDocs(regsQuery);
@@ -39,6 +45,7 @@ export default function EventRegistration() {
           setEvent(eventData);
           setParticipantCount(count);
           setIsFull(full);
+          setIsEnded(ended);
         } else {
           setEvent(null);
         }
@@ -51,6 +58,12 @@ export default function EventRegistration() {
 
   const submit = async (e) => {
     e.preventDefault();
+    
+    // Check if event has ended
+    if (isEnded) {
+      alert("This event has ended. Registration is closed.");
+      return;
+    }
     
     // Check if event is full
     if (isFull) {
@@ -143,10 +156,16 @@ export default function EventRegistration() {
                   {event.participantLimit && (
                     <div className="mt-2 text-xs text-slate-300">
                       {participantCount}/{event.participantLimit} spots
-                      {isFull && (
+                      {isFull && !isEnded && (
                         <span className="ml-2 font-semibold text-red-400">(Full)</span>
                       )}
+                      {isEnded && (
+                        <span className="ml-2 font-semibold text-gray-400">(Ended)</span>
+                      )}
                     </div>
+                  )}
+                  {isEnded && !event.participantLimit && (
+                    <div className="mt-2 text-xs font-semibold text-gray-400">Event Ended</div>
                   )}
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-slate-300">
@@ -164,7 +183,11 @@ export default function EventRegistration() {
             >
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/15 via-brand-500/10 to-emerald-500/15 opacity-70" />
               <div className="relative z-10 space-y-6">
-                {isFull ? (
+                {isEnded ? (
+                  <div className="rounded-2xl border border-gray-400/40 bg-gray-500/20 px-4 py-3 text-sm font-medium text-gray-200">
+                    This event has ended. Registration is closed.
+                  </div>
+                ) : isFull ? (
                   <div className="rounded-2xl border border-red-400/40 bg-red-500/20 px-4 py-3 text-sm font-medium text-red-200">
                     This event is full. Registration is closed.
                   </div>
@@ -177,20 +200,22 @@ export default function EventRegistration() {
                   <div className="space-y-2">
                     <label className="text-xs uppercase tracking-[0.3em] text-slate-400">Full Name</label>
                     <input
-                      className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:bg-white/15 focus:ring-2 focus:ring-emerald-400/40"
+                      className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:bg-white/15 focus:ring-2 focus:ring-emerald-400/40 disabled:opacity-50 disabled:cursor-not-allowed"
                       placeholder="Your name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
+                      disabled={isEnded || isFull}
                       required
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs uppercase tracking-[0.3em] text-slate-400">Roll Number</label>
                     <input
-                      className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:bg-white/15 focus:ring-2 focus:ring-emerald-400/40"
+                      className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:bg-white/15 focus:ring-2 focus:ring-emerald-400/40 disabled:opacity-50 disabled:cursor-not-allowed"
                       placeholder="CH.SC.U4CSE12345"
                       value={rollNo}
                       onChange={(e) => setRollNo(e.target.value)}
+                      disabled={isEnded || isFull}
                       required
                     />
                   </div>
@@ -199,22 +224,24 @@ export default function EventRegistration() {
                   <div className="space-y-2">
                     <label className="text-xs uppercase tracking-[0.3em] text-slate-400">Email</label>
                     <input
-                      className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:bg-white/15 focus:ring-2 focus:ring-emerald-400/40"
+                      className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:bg-white/15 focus:ring-2 focus:ring-emerald-400/40 disabled:opacity-50 disabled:cursor-not-allowed"
                       placeholder="you@ch.students.amrita.edu"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      disabled={isEnded || isFull}
                       required
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs uppercase tracking-[0.3em] text-slate-400">Phone Number</label>
                     <input
-                      className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:bg-white/15 focus:ring-2 focus:ring-emerald-400/40"
+                      className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:bg-white/15 focus:ring-2 focus:ring-emerald-400/40 disabled:opacity-50 disabled:cursor-not-allowed"
                       placeholder="+91 9876543210"
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
+                      disabled={isEnded || isFull}
                       required
                     />
                   </div>
@@ -223,9 +250,10 @@ export default function EventRegistration() {
                   <div className="space-y-2">
                     <label className="text-xs uppercase tracking-[0.3em] text-slate-400">Department</label>
                     <select
-                      className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:bg-white/15 focus:ring-2 focus:ring-emerald-400/40"
+                      className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:bg-white/15 focus:ring-2 focus:ring-emerald-400/40 disabled:opacity-50 disabled:cursor-not-allowed"
                       value={department}
                       onChange={(e) => setDepartment(e.target.value)}
+                      disabled={isEnded || isFull}
                       required
                     >
                       <option value="">Select Department</option>
@@ -239,9 +267,10 @@ export default function EventRegistration() {
                   <div className="space-y-2">
                     <label className="text-xs uppercase tracking-[0.3em] text-slate-400">Year</label>
                     <select
-                      className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:bg-white/15 focus:ring-2 focus:ring-emerald-400/40"
+                      className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-400/70 focus:bg-white/15 focus:ring-2 focus:ring-emerald-400/40 disabled:opacity-50 disabled:cursor-not-allowed"
                       value={year}
                       onChange={(e) => setYear(e.target.value)}
+                      disabled={isEnded || isFull}
                       required
                     >
                       <option value="">Select Year</option>
@@ -254,12 +283,12 @@ export default function EventRegistration() {
                 </div>
                 <button
                   type="submit"
-                  disabled={submitting || saved || isFull}
+                  disabled={submitting || saved || isFull || isEnded}
                   className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-500 via-brand-500 to-indigo-500 px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-lg shadow-emerald-500/25 transition hover:shadow-emerald-500/40 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <span className="absolute inset-0 translate-y-full bg-white/20 transition duration-300 group-hover:translate-y-0" />
                   <span className="relative">
-                    {isFull ? "Event Full" : submitting ? "Registering..." : saved ? "Registered!" : "Confirm Seat"}
+                    {isEnded ? "Event Ended" : isFull ? "Event Full" : submitting ? "Registering..." : saved ? "Registered!" : "Confirm Seat"}
                   </span>
                 </button>
               </div>
