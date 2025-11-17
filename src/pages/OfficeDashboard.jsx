@@ -162,7 +162,7 @@ export default function OfficeDashboard() {
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-xs uppercase tracking-[0.35em] text-[#00ff88]">
                 Event Ledger
               </div>
-              <div className="flex flex-col gap-5">
+              <div className="event-ledger-scroll flex flex-col gap-5 max-h-[60vh] overflow-y-auto pr-2">
                 {loading ? (
                   <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-6 text-sm text-slate-300">
                     Fetching latest events…
