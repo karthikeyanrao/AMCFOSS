@@ -5,7 +5,7 @@ import "aos/dist/aos.css";
 import AOS from "aos";
 import "font-awesome/css/font-awesome.min.css";
 import VanillaTilt from "vanilla-tilt";
-import { addDoc, collection, serverTimestamp, getDocs, query, where } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, getDocs } from "firebase/firestore";
 import { db } from "./firebase";
 import { useAuth } from "./context/AuthContext";
 
@@ -14,7 +14,6 @@ const HomeEvents = memo(({ countdown1 }) => {
   const [homeEvents, setHomeEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const eventsRef = useMemo(() => collection(db, "events"), []);
-  const regsRef = useMemo(() => collection(db, "event_registrations"), []);
 
   useEffect(() => {
     let isMounted = true;
@@ -24,39 +23,24 @@ const HomeEvents = memo(({ countdown1 }) => {
         const snap = await getDocs(eventsRef);
         if (!isMounted) return;
         
-        const eventsList = await Promise.all(
-          snap.docs.map(async (docSnap) => {
-            const eventData = { id: docSnap.id, ...docSnap.data() };
-            
-            // Check if event has ended
-            const now = new Date().getTime();
-            const eventDate = eventData.date ? new Date(eventData.date).getTime() : null;
-            const isEnded = eventDate ? now > eventDate : false;
-            
-            // Get participant count - handle permission errors gracefully
-            let participantCount = 0;
-            let isFull = false;
-            try {
-              const regsQuery = query(regsRef, where("eventId", "==", docSnap.id));
-              const regsSnap = await getDocs(regsQuery);
-              participantCount = regsSnap.size;
-              isFull = eventData.participantLimit && participantCount >= eventData.participantLimit;
-            } catch (regError) {
-              console.warn(`Failed to load participant count for event ${docSnap.id}:`, regError);
-              // Continue without participant count if permission denied
-              if (regError.code === 'permission-denied') {
-                participantCount = 0;
-              }
-            }
-            
-            return {
-              ...eventData,
-              participantCount,
-              isFull,
-              isEnded,
-            };
-          })
-        );
+        const eventsList = snap.docs.map((docSnap) => {
+          const eventData = { id: docSnap.id, ...docSnap.data() };
+
+          const registrations = Array.isArray(eventData.registrations) ? eventData.registrations : [];
+          const participantCount = registrations.length;
+          const now = new Date().getTime();
+          const eventDate = eventData.date ? new Date(eventData.date).getTime() : null;
+          const isEnded = eventDate ? now > eventDate : false;
+          const isFull = eventData.participantLimit && participantCount >= eventData.participantLimit;
+          
+          return {
+            ...eventData,
+            registrations,
+            participantCount,
+            isFull,
+            isEnded,
+          };
+        });
         
         // Sort events: upcoming first (by date ascending), then ended (by date descending)
         const sortedEvents = eventsList.sort((a, b) => {
@@ -101,36 +85,43 @@ const HomeEvents = memo(({ countdown1 }) => {
   if (isLoading) {
     return (
       <div className="events-grid">
-        <div className="event-card" data-aos="fade-up">
-          <div className="event-date">
-            <span className="day">29</span>
-            <span className="month">JAN</span>
+        {[0, 1].map((idx) => (
+          <div key={idx} className="event-card skeleton-card">
+            <div className="skeleton-date" />
+            <div className="skeleton-details">
+              <div className="skeleton-line short" />
+              <div className="skeleton-line" />
+              <div className="skeleton-line" />
+            </div>
           </div>
-          <div className="event-details">
-            <h3>FOSS Hackathon 2024</h3>
-            <p>48-hour coding challenge</p>
-            <div className="countdown">{countdown1}</div>
-            <Link to="/events" className="primary-btn">View All Events</Link>
-          </div>
-        </div>
+        ))}
       </div>
     );
   }
 
   if (homeEvents.length === 0) {
     return (
-      <div className="events-grid">
-        <div className="event-card" data-aos="fade-up">
-          <div className="event-date">
-            <span className="day">29</span>
-            <span className="month">JAN</span>
+      <div className="events-grid events-grid-empty">
+        <div className="event-card empty-card" data-aos="fade-up">
+          <div className="empty-icon">
+            <i className="fas fa-rocket" />
           </div>
-          <div className="event-details">
-            <h3>FOSS Hackathon 2024</h3>
-            <p>48-hour coding challenge</p>
-            <div className="countdown">{countdown1}</div>
-            <Link to="/events" className="primary-btn">View All Events</Link>
+          <h3>No events just yet</h3>
+          <p>Our crew is working on the next release. In the meantime, explore past highlights and get notified first.</p>
+          <Link to="/events" className="primary-btn" style={{ width: "100%" }}>
+            Browse Events
+            <i className="fas fa-arrow-right" style={{ marginLeft: "0.5rem" }}></i>
+          </Link>
+        </div>
+        <div className="event-card empty-card secondary" data-aos="fade-up" data-aos-delay="100">
+          <div className="empty-icon pulse">
+            <i className="fas fa-bell" />
           </div>
+          <h3>Want to host one?</h3>
+          <p>Ping an office bearer or drop us a message. We’ll help you launch the next club experience.</p>
+          <a href="#contact" className="secondary-btn" style={{ width: "100%", textAlign: "center" }}>
+            Contact Team
+          </a>
         </div>
       </div>
     );

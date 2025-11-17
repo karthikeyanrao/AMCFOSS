@@ -9,8 +9,6 @@ import {
   getDocs,
   serverTimestamp,
   updateDoc,
-  query,
-  where,
 } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../firebase";
@@ -26,36 +24,30 @@ export default function OfficeDashboard() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [participants, setParticipants] = useState([]);
   const [showParticipants, setShowParticipants] = useState(false);
-  const [loadingParticipants, setLoadingParticipants] = useState(false);
   const [allTasks, setAllTasks] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(false);
 
   const eventsRef = useMemo(() => collection(db, "events"), []);
-  const regsRef = useMemo(() => collection(db, "event_registrations"), []);
   const tasksRef = useMemo(() => collection(db, "tasks"), []);
 
   const loadEvents = async () => {
     setLoading(true);
     try {
       const snap = await getDocs(eventsRef);
-      const eventsList = await Promise.all(
-        snap.docs.map(async (docSnap) => {
-          const eventData = { id: docSnap.id, ...docSnap.data() };
-          
-          // Get participant count
-          const regsQuery = query(regsRef, where("eventId", "==", docSnap.id));
-          const regsSnap = await getDocs(regsQuery);
-          const participantCount = regsSnap.size;
-          const isFull = eventData.participantLimit && participantCount >= eventData.participantLimit;
-          
-          return {
-            ...eventData,
-            participantCount,
-            isFull,
-          };
-        })
-      );
-      
+      const eventsList = snap.docs.map((docSnap) => {
+        const eventData = { id: docSnap.id, ...docSnap.data() };
+        const registrations = Array.isArray(eventData.registrations) ? eventData.registrations : [];
+        const participantCount = registrations.length;
+        const isFull = eventData.participantLimit && participantCount >= eventData.participantLimit;
+
+        return {
+          ...eventData,
+          registrations,
+          participantCount,
+          isFull,
+        };
+      });
+
       setEvents(eventsList);
     } finally {
       setLoading(false);
@@ -98,6 +90,7 @@ export default function OfficeDashboard() {
       date: date, 
       description: desc || "",
       participantLimit: participantLimit ? parseInt(participantLimit) : null,
+      registrations: [],
       createdAt: serverTimestamp(),
     });
     setTitle("");
@@ -107,24 +100,10 @@ export default function OfficeDashboard() {
     await loadEvents();
   };
 
-  const loadParticipants = async (eventId) => {
-    setLoadingParticipants(true);
+  const loadParticipants = (event) => {
+    setSelectedEvent(event);
+    setParticipants(Array.isArray(event.registrations) ? event.registrations : []);
     setShowParticipants(true);
-    setSelectedEvent(eventId);
-    try {
-      const regsQuery = query(regsRef, where("eventId", "==", eventId));
-      const regsSnap = await getDocs(regsQuery);
-      setParticipants(
-        regsSnap.docs.map((docSnap) => ({
-          id: docSnap.id,
-          ...docSnap.data(),
-        }))
-      );
-    } catch (error) {
-      console.error("Failed to load participants", error);
-    } finally {
-      setLoadingParticipants(false);
-    }
   };
 
   const updateEvent = async (id, payload) => {
@@ -219,7 +198,7 @@ export default function OfficeDashboard() {
                     </div>
                     <div className="flex items-center gap-3">
                       <button
-                        onClick={() => loadParticipants(event.id)}
+                        onClick={() => loadParticipants(event)}
                         className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-200 transition hover:border-[#00ff88]/60 hover:text-[#00ff88]"
                       >
                         View Participants
@@ -398,7 +377,14 @@ export default function OfficeDashboard() {
               className="relative max-h-[80vh] w-full max-w-2xl overflow-hidden rounded-3xl border border-white/10 bg-[#03060d] p-6 shadow-2xl"
             >
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-2xl font-semibold text-white">Participants List</h2>
+                <div>
+                  <h2 className="text-2xl font-semibold text-white">Participants List</h2>
+                  {selectedEvent ? (
+                    <p className="text-xs uppercase tracking-[0.3em] text-[#00ff88] mt-1">
+                      {selectedEvent.title}
+                    </p>
+                  ) : null}
+                </div>
                 <button
                   onClick={() => {
                     setShowParticipants(false);
@@ -411,15 +397,13 @@ export default function OfficeDashboard() {
                 </button>
               </div>
               <div className="max-h-[60vh] overflow-y-auto">
-                {loadingParticipants ? (
-                  <div className="py-8 text-center text-sm text-slate-300">Loading participants...</div>
-                ) : participants.length === 0 ? (
+                {participants.length === 0 ? (
                   <div className="py-8 text-center text-sm text-slate-300">No participants yet</div>
                 ) : (
                   <div className="space-y-3">
                     {participants.map((participant) => (
                       <div
-                        key={participant.id}
+                        key={participant.email + participant.rollNo}
                         className="rounded-2xl border border-white/10 bg-white/5 p-4"
                       >
                         <div className="flex items-center justify-between">

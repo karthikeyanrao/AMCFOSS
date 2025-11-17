@@ -809,6 +809,10 @@ a, button, input, textarea, select, [role="button"], [onclick] {
     z-index: 1;
 }
 
+.events-grid-empty {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
 .event-card {
     min-width: 320px;
     max-width: 380px;
@@ -868,6 +872,106 @@ a, button, input, textarea, select, [role="button"], [onclick] {
         0 0 40px rgba(79, 70, 229, 0.15),
         inset 0 1px 0 rgba(255, 255, 255, 0.2);
     background: rgba(255, 255, 255, 0.06);
+}
+
+.event-card.empty-card {
+    max-width: none;
+    padding: 2rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    justify-content: center;
+    min-height: 320px;
+    border-style: dashed;
+    border-color: rgba(0, 255, 136, 0.4);
+}
+
+.event-card.empty-card.secondary {
+    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.event-card.empty-card .empty-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 0.5rem;
+    border-radius: 20px;
+    background: rgba(0, 255, 136, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--accent-color);
+    box-shadow: 0 15px 30px rgba(0, 255, 136, 0.15);
+}
+
+.event-card.empty-card .empty-icon.pulse {
+    animation: pulseGlow 2.2s ease-in-out infinite;
+}
+
+.event-card.empty-card h3 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.event-card.empty-card p {
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.6;
+}
+
+.event-card.skeleton-card {
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.skeleton-date,
+.skeleton-details,
+.skeleton-line {
+    position: relative;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.skeleton-date {
+    height: 120px;
+    margin: 1.5rem;
+}
+
+.skeleton-details {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.skeleton-line {
+    height: 14px;
+}
+
+.skeleton-line.short {
+    width: 60%;
+}
+
+.skeleton-date::after,
+.skeleton-line::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+    animation: shimmer 1.6s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+@keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 0 rgba(0, 255, 136, 0.0); }
+    50% { box-shadow: 0 0 25px rgba(0, 255, 136, 0.4); }
 }
 
 .event-date {

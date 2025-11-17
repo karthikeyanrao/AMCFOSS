@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 import "../Foss2.css";
 
@@ -10,7 +10,6 @@ export default function Events() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const eventsRef = useMemo(() => collection(db, "events"), []);
-  const regsRef = useMemo(() => collection(db, "event_registrations"), []);
 
   useEffect(() => {
     const load = async () => {
@@ -18,39 +17,25 @@ export default function Events() {
       setError(null);
       try {
         const snap = await getDocs(eventsRef);
-        const eventsList = await Promise.all(
-          snap.docs.map(async (docSnap) => {
-            const eventData = { id: docSnap.id, ...docSnap.data() };
-            
-            // Check if event has ended
-            const now = new Date().getTime();
-            const eventDate = eventData.date ? new Date(eventData.date).getTime() : null;
-            const isEnded = eventDate ? now > eventDate : false;
-            
-            // Get participant count - handle permission errors gracefully
-            let participantCount = 0;
-            let isFull = false;
-            try {
-              const regsQuery = query(regsRef, where("eventId", "==", docSnap.id));
-              const regsSnap = await getDocs(regsQuery);
-              participantCount = regsSnap.size;
-              isFull = eventData.participantLimit && participantCount >= eventData.participantLimit;
-            } catch (regError) {
-              console.warn(`Failed to load participant count for event ${docSnap.id}:`, regError);
-              // Continue without participant count if permission denied
-              if (regError.code === 'permission-denied') {
-                participantCount = 0;
-              }
-            }
-            
-            return {
-              ...eventData,
-              participantCount,
-              isFull,
-              isEnded,
-            };
-          })
-        );
+        const eventsList = snap.docs.map((docSnap) => {
+          const eventData = { id: docSnap.id, ...docSnap.data() };
+          const registrations = Array.isArray(eventData.registrations) ? eventData.registrations : [];
+          
+          // Check if event has ended
+          const now = new Date().getTime();
+          const eventDate = eventData.date ? new Date(eventData.date).getTime() : null;
+          const isEnded = eventDate ? now > eventDate : false;
+          const participantCount = registrations.length;
+          const isFull = eventData.participantLimit && participantCount >= eventData.participantLimit;
+          
+          return {
+            ...eventData,
+            registrations,
+            participantCount,
+            isFull,
+            isEnded,
+          };
+        });
         
         // Sort events: upcoming first (by date ascending), then ended (by date descending)
         const sortedEvents = eventsList.sort((a, b) => {
@@ -84,7 +69,7 @@ export default function Events() {
       }
     };
     load();
-  }, [eventsRef, regsRef]);
+  }, [eventsRef]);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#02050c] text-white">

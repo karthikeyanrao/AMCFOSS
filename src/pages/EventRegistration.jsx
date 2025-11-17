@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { addDoc, collection, doc, getDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc, runTransaction, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 
 const DEPARTMENTS = ["CSE", "AIE", "CYS", "CCE", "ECE", "MECH", "ARE", "RAI", "AIDS"];
@@ -13,7 +13,6 @@ export default function EventRegistration() {
   const [participantCount, setParticipantCount] = useState(0);
   const [isFull, setIsFull] = useState(false);
   const [isEnded, setIsEnded] = useState(false);
-  const regsRef = useMemo(() => collection(db, "event_registrations"), []);
   const [name, setName] = useState("");
   const [rollNo, setRollNo] = useState("");
   const [email, setEmail] = useState("");
@@ -30,19 +29,16 @@ export default function EventRegistration() {
         const snap = await getDoc(doc(db, "events", id));
         if (snap.exists()) {
           const eventData = { id: snap.id, ...snap.data() };
+          const registrations = Array.isArray(eventData.registrations) ? eventData.registrations : [];
           
           // Check if event has ended
           const now = new Date().getTime();
           const eventDate = eventData.date ? new Date(eventData.date).getTime() : null;
           const ended = eventDate ? now > eventDate : false;
-          
-          // Get participant count
-          const regsQuery = query(regsRef, where("eventId", "==", id));
-          const regsSnap = await getDocs(regsQuery);
-          const count = regsSnap.size;
+          const count = registrations.length;
           const full = eventData.participantLimit && count >= eventData.participantLimit;
           
-          setEvent(eventData);
+          setEvent({ ...eventData, registrations });
           setParticipantCount(count);
           setIsFull(full);
           setIsEnded(ended);
@@ -54,7 +50,7 @@ export default function EventRegistration() {
       }
     };
     loadEvent();
-  }, [id, regsRef]);
+  }, [id]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -73,21 +69,7 @@ export default function EventRegistration() {
     
     setSubmitting(true);
     try {
-      // Double-check participant count before registering
-      const regsQuery = query(regsRef, where("eventId", "==", id));
-      const regsSnap = await getDocs(regsQuery);
-      const currentCount = regsSnap.size;
-      
-      if (event.participantLimit && currentCount >= event.participantLimit) {
-        alert("This event is now full. Registration is closed.");
-        setIsFull(true);
-        setParticipantCount(currentCount);
-        setSubmitting(false);
-        return;
-      }
-      
-      await addDoc(regsRef, {
-        eventId: id,
+      const newRegistration = {
         name,
         rollNo,
         email,
@@ -95,12 +77,40 @@ export default function EventRegistration() {
         year,
         phone,
         createdAt: serverTimestamp(),
+      };
+      const clientRegistration = {
+        ...newRegistration,
+        createdAt: new Date().toISOString(),
+      };
+      let updatedCount = participantCount;
+      
+      await runTransaction(db, async (transaction) => {
+        const eventRef = doc(db, "events", id);
+        const eventSnap = await transaction.get(eventRef);
+        if (!eventSnap.exists()) {
+          throw new Error("Event not found");
+        }
+        const data = eventSnap.data();
+        const registrations = Array.isArray(data.registrations) ? data.registrations : [];
+        const now = new Date().getTime();
+        const eventDate = data.date ? new Date(data.date).getTime() : null;
+        const ended = eventDate ? now > eventDate : false;
+        if (ended) {
+          throw new Error("Event has ended");
+        }
+        if (data.participantLimit && registrations.length >= data.participantLimit) {
+          throw new Error("Event full");
+        }
+        transaction.update(eventRef, {
+          registrations: [...registrations, newRegistration],
+        });
+        updatedCount = registrations.length + 1;
       });
       
-      // Update participant count
-      const newCount = currentCount + 1;
-      setParticipantCount(newCount);
-      if (event.participantLimit && newCount >= event.participantLimit) {
+      const newRegistrations = [...(event?.registrations || []), clientRegistration];
+      setEvent((prev) => (prev ? { ...prev, registrations: newRegistrations } : prev));
+      setParticipantCount(updatedCount);
+      if (event?.participantLimit && updatedCount >= event.participantLimit) {
         setIsFull(true);
       }
       
@@ -114,7 +124,19 @@ export default function EventRegistration() {
       setTimeout(() => setSaved(false), 5000);
     } catch (error) {
       console.error("Registration failed", error);
-      alert("Registration failed. Please try again.");
+      const message =
+        error.message === "Event has ended"
+          ? "This event has ended. Registration is closed."
+          : error.message === "Event full"
+          ? "This event is now full. Registration is closed."
+          : "Registration failed. Please try again.";
+      alert(message);
+      if (error.message === "Event has ended") {
+        setIsEnded(true);
+      }
+      if (error.message === "Event full") {
+        setIsFull(true);
+      }
     } finally {
       setSubmitting(false);
     }
