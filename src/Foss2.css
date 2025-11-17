@@ -2688,7 +2688,7 @@ a, button, input, textarea, select, [role="button"], [onclick] {
 /* Scroll Indicator */
 .scroll-indicator {
     position: absolute;
-    bottom: 11rem;
+    bottom:11rem;
     left: 50%;
     transform: translateX(-50%);
     display: flex;

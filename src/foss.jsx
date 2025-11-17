@@ -484,9 +484,9 @@ const FossApp = () => {
       roleIcon: "fas fa-star",
       photo: resolveImage("Ajay.JPG"),
       social: {
-        instagram: "sarah_designs",
-        github: "sarahw",
-        linkedin: "sarah-wilson"
+        instagram: "dude_itz.ajay",
+        github: "Ajay-Ravikumarrajan",
+        linkedin: "ajay-ravikumarrajan-22028620b"
       }
     },
     { 
