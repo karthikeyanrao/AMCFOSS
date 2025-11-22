@@ -17,12 +17,13 @@ const HomeEvents = memo(({ countdown1 }) => {
 
   useEffect(() => {
     let isMounted = true;
-    
+
     const loadEvents = async () => {
       try {
+        setIsLoading(true);
         const snap = await getDocs(eventsRef);
         if (!isMounted) return;
-        
+
         const eventsList = snap.docs.map((docSnap) => {
           const eventData = { id: docSnap.id, ...docSnap.data() };
 
@@ -32,7 +33,7 @@ const HomeEvents = memo(({ countdown1 }) => {
           const eventDate = eventData.date ? new Date(eventData.date).getTime() : null;
           const isEnded = eventDate ? now > eventDate : false;
           const isFull = eventData.participantLimit && participantCount >= eventData.participantLimit;
-          
+
           return {
             ...eventData,
             registrations,
@@ -41,7 +42,7 @@ const HomeEvents = memo(({ countdown1 }) => {
             isEnded,
           };
         });
-        
+
         // Sort events: upcoming first (by date ascending), then ended (by date descending)
         const sortedEvents = eventsList.sort((a, b) => {
           const dateA = a.date ? new Date(a.date).getTime() : 0;
@@ -49,7 +50,7 @@ const HomeEvents = memo(({ countdown1 }) => {
           const now = new Date().getTime();
           const aEnded = a.isEnded || (dateA && now > dateA);
           const bEnded = b.isEnded || (dateB && now > dateB);
-          
+
           // If both ended or both upcoming, sort by date
           if (aEnded === bEnded) {
             // Ended events: most recent first (descending)
@@ -59,7 +60,7 @@ const HomeEvents = memo(({ countdown1 }) => {
           // Upcoming events come before ended events
           return aEnded ? 1 : -1;
         }).slice(0, 2);
-        
+
         if (isMounted) {
           setHomeEvents(sortedEvents);
           setIsLoading(false);
@@ -73,9 +74,9 @@ const HomeEvents = memo(({ countdown1 }) => {
         }
       }
     };
-    
+
     loadEvents();
-    
+
     return () => {
       isMounted = false;
     };
@@ -133,7 +134,7 @@ const HomeEvents = memo(({ countdown1 }) => {
         const eventDate = event.date ? new Date(event.date) : null;
         const day = eventDate ? eventDate.getDate() : "TBA";
         const month = eventDate ? eventDate.toLocaleDateString("en-US", { month: "short" }).toUpperCase() : "TBA";
-        
+
         return (
           <div key={event.id} className="event-card" data-aos="fade-up" data-aos-delay={idx * 100}>
             <div className="event-date">
@@ -198,7 +199,7 @@ const HomeEvents = memo(({ countdown1 }) => {
 const FossApp = () => {
   // Auth
   const { user, role } = useAuth();
-  
+
   // State management
   const [countdown1, setCountdown1] = useState("");
   const [countdown2, setCountdown2] = useState("");
@@ -218,7 +219,19 @@ const FossApp = () => {
 
   // Initialize AOS
   useEffect(() => {
-    AOS.init({ duration: 800, offset: 100, once: true });
+    const isMobile = window.innerWidth < 768;
+    if (!isMobile) {
+      AOS.init({ duration: 800, offset: 100, once: true });
+    } else {
+      // Completely disable AOS on mobile to prevent overflow issues
+      AOS.init({ 
+        disable: function() {
+          return true; // Always disable on mobile
+        },
+        duration: 0,
+        once: false
+      });
+    }
   }, []);
 
   // Navbar scroll effect and scroll indicator visibility
@@ -233,7 +246,7 @@ const FossApp = () => {
           navbarRef.current.style.boxShadow = 'none';
         }
       }
-      
+
       // Show/hide scroll indicator based on scroll position (visible only at top)
       const scrollIndicator = document.querySelector('.scroll-indicator');
       if (scrollIndicator) {
@@ -247,7 +260,7 @@ const FossApp = () => {
 
     // Check initial scroll position
     handleScroll();
-    
+
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -276,14 +289,14 @@ const FossApp = () => {
     const name = formData.get("name");
     const email = formData.get("email");
     const message = formData.get("message") || formData.get("Message");
-    
+
     // Validate inputs
     if (!name || !email || !message) {
       setContactStatus("error");
       setTimeout(() => setContactStatus(null), 4000);
       return;
     }
-    
+
     const payload = {
       name: name.trim(),
       email: email.trim(),
@@ -392,8 +405,31 @@ const FossApp = () => {
       setIsMobile(window.innerWidth < 768);
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    // Prevent horizontal scroll on mobile
+    const preventHorizontalScroll = () => {
+      if (window.innerWidth < 768) {
+        document.documentElement.style.overflowX = 'hidden';
+        document.body.style.overflowX = 'hidden';
+        document.documentElement.style.maxWidth = '100vw';
+        document.body.style.maxWidth = '100vw';
+      }
+    };
+
+    handleResize();
+    preventHorizontalScroll();
+    
+    window.addEventListener('resize', () => {
+      handleResize();
+      preventHorizontalScroll();
+    });
+    
+    // Run on initial load and after animations
+    setTimeout(preventHorizontalScroll, 100);
+    setTimeout(preventHorizontalScroll, 3000);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   const handleTouchStart = (e) => {
@@ -434,8 +470,8 @@ const FossApp = () => {
 
   // Team members data
   const teamMembers = [
-    { 
-      name: "Karthikeyan", 
+    {
+      name: "Karthikeyan",
       role: "President",
       roleIcon: "fas fa-crown",
       photo: resolveImage("Photo.jpg"),
@@ -445,8 +481,8 @@ const FossApp = () => {
         linkedin: "karthikeyanrao-suresh"
       }
     },
-    { 
-      name: "Maangalya", 
+    {
+      name: "Maangalya",
       role: "Vice President",
       roleIcon: "fas fa-crown",
       photo: resolveImage("Maangalya.jpg"),
@@ -456,8 +492,8 @@ const FossApp = () => {
         linkedin: "Maangalya-senthilkumar"
       }
     },
-    { 
-      name: "Padmaja", 
+    {
+      name: "Padmaja",
       role: "Secretary",
       roleIcon: "fas fa-crown",
       photo: resolveImage("Padmaja.jpg"),
@@ -467,8 +503,8 @@ const FossApp = () => {
         linkedin: "padmaja-nagarajan-07b40a28a"
       }
     },
-    { 
-      name: "Chandana", 
+    {
+      name: "Chandana",
       role: "Joint-Secretary",
       roleIcon: "fas fa-crown",
       photo: resolveImage("Chandana.png"),
@@ -478,8 +514,8 @@ const FossApp = () => {
         linkedin: "Koduru Chandana"
       }
     },
-    { 
-      name: "Ajay", 
+    {
+      name: "Ajay",
       role: "PR",
       roleIcon: "fas fa-star",
       photo: resolveImage("Ajay.JPG"),
@@ -489,8 +525,8 @@ const FossApp = () => {
         linkedin: "ajay-ravikumarrajan-22028620b"
       }
     },
-    { 
-      name: "Nihan Anoop", 
+    {
+      name: "Nihan Anoop",
       role: "Ofice-Bearer",
       roleIcon: "fas fa-star",
       photo: resolveImage("Nihan.png"),
@@ -500,8 +536,8 @@ const FossApp = () => {
         linkedin: "m-nihan-anoop"
       }
     },
-    { 
-      name: "Ruhan", 
+    {
+      name: "Ruhan",
       role: "Office-Bearer",
       roleIcon: "fas fa-star",
       photo: resolveImage("Ruhan.jpg"),
@@ -511,8 +547,8 @@ const FossApp = () => {
         linkedin: "Ruhan Thangamani"
       }
     },
-    { 
-      name: "SriVishnu", 
+    {
+      name: "SriVishnu",
       role: "Club coordinator",
       roleIcon: "fas fa-code",
       photo: resolveImage("Srivishnu.jpg"),
@@ -522,8 +558,8 @@ const FossApp = () => {
         linkedin: "srivishnu-t"
       }
     }
-    ,{ 
-      name: "Bhoomish", 
+    , {
+      name: "Bhoomish",
       role: "Technical Lead",
       roleIcon: "fas fa-code",
       photo: resolveImage("Bhoomish.jpg"),
@@ -533,8 +569,8 @@ const FossApp = () => {
         linkedin: "sarah-wilson"
       }
     }
-    ,{ 
-      name: "Sakthi Sri Kumaran", 
+    , {
+      name: "Sakthi Sri Kumaran",
       role: "Technical Lead",
       roleIcon: "fas fa-code",
       photo: resolveImage("Sakthi.jpg"),
@@ -579,8 +615,8 @@ const FossApp = () => {
             <img src={clubLogo} alt="FOSS" className="nav-logo" />
             <span>FOSS Club</span>
           </div>
-          <div 
-            id="navToggle" 
+          <div
+            id="navToggle"
             className={`nav-toggle ${isNavActive ? 'active' : ''}`}
             onClick={toggleNav}
             aria-expanded={isNavActive}
@@ -596,11 +632,11 @@ const FossApp = () => {
             <li><a href="#events" onClick={(e) => smoothScroll(e, '#events')}>Events</a></li>
             <li><a href="#projects" onClick={(e) => smoothScroll(e, '#projects')}>Projects</a></li>
             <li><a href="#team" onClick={(e) => smoothScroll(e, '#team')}>Team</a></li>
-            
+
             <li className="auth-links">
               {user ? (
-                <Link 
-                  to={role === "office_bearer" ? "/office" : role === "mentor" ? "/mentor" : "/"} 
+                <Link
+                  to={role === "office_bearer" ? "/office" : role === "mentor" ? "/mentor" : "/"}
                   className="auth-link"
                 >
                   Go to Dashboard
@@ -608,7 +644,7 @@ const FossApp = () => {
               ) : (
                 <Link to="/login" className="auth-link">Login</Link>
               )}
-              
+
               <button className="join-btn" onClick={(e) => smoothScroll(e, '#contact')}>Join Us</button>
             </li>
           </ul>
@@ -627,7 +663,7 @@ const FossApp = () => {
           </h1>
           <h2 className="typewriter hero-subtitle">{typedText}</h2>
           <p className="hero-description">
-            Join a vibrant community of developers, designers, and innovators building the future of technology through 
+            Join a vibrant community of developers, designers, and innovators building the future of technology through
             <span className="highlight-text"> open-source collaboration</span> and <span className="highlight-text">cutting-edge innovation</span>.
           </p>
           <div className="hero-stats" data-aos="fade-up" data-aos-delay="300">
@@ -746,134 +782,134 @@ const FossApp = () => {
           </div>
         </div>
       </section>
-       {/* Scroll Progress Bar */}
-       <div className="scroll-progress" style={{ transform: `scaleX(${window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)})` }} />
+      {/* Scroll Progress Bar */}
+      <div className="scroll-progress" style={{ transform: `scaleX(${window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)})` }} />
 
-{/* Team Section */}
-<section id="team" className="section team">
-  <div className="section-content">
-    <h2 className="section-title" data-aos="fade-up">Meet Our Team</h2>
-    <p className="section-subtitle" data-aos="fade-up"   style={{textAlign: 'center', marginTop: '-2rem'}}>The amazing people behind FOSS Club</p>
- 
-    <div className="team-slider-container">
-    <div
-      className="team-slider"
-      onMouseEnter={() => setTeamPaused(true)}
-      onMouseLeave={() => setTeamPaused(false)}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
-        {teamMembers.map((member, index) => {
-          // Calculate circular position relative to current slide
-          const totalMembers = teamMembers.length;
-          let diff = index - currentSlide;
-          
-          // Normalize diff to shortest circular distance (-totalMembers/2 to totalMembers/2)
-          if (diff > totalMembers / 2) {
-            diff = diff - totalMembers;
-          } else if (diff < -totalMembers / 2) {
-            diff = diff + totalMembers;
-          }
-          
-          // Determine position class
-          let position = '';
-          if (diff === 0) {
-            position = 'active';
-          } else if (diff === -1) {
-            position = 'prev';
-          } else if (diff === 1) {
-            position = 'next';
-          } else if (Math.abs(diff) <= 2) {
-            position = 'nearby';
-          }
-          
-          
-          const isActive = diff === 0;
-          const shouldShow = isMobile ? isActive : true;
-          
-          // Calculate scale and opacity based on distance
-          const absDiff = Math.abs(diff);
-          const scale = absDiff === 0 ? 1 : absDiff === 1 ? 0.85 : Math.max(0.5, 1 - absDiff * 0.12);
-          const opacity = isMobile ? (isActive ? 1 : 0) : (absDiff === 0 ? 1 : absDiff === 1 ? 0.7 : Math.max(0.2, 0.6 - absDiff * 0.1));
-          const blur = absDiff === 0 ? 0 : absDiff === 1 ? 2 : Math.min(6, absDiff * 1.5);
-          
-          // Calculate horizontal offset - use the normalized diff
-          const offsetX = diff * 120; // 120% per card for better spacing
-          
-          if (!shouldShow) {
-            return null;
-          }
-          
-          return (
-            <div 
-              key={index} 
-              className={`team-card ${position} ${isActive ? 'current-active' : ''}`}
-              style={{
-                transform: isMobile 
-                  ? `translate(-50%, -50%) scale(1)` 
-                  : `translate(calc(-50% + ${offsetX}%), -50%) scale(${scale})`,
-                opacity: opacity,
-                pointerEvents: isMobile ? (isActive ? 'auto' : 'none') : (absDiff <= 1 ? 'auto' : 'none'),
-                zIndex: isMobile ? (isActive ? 10 : 0) : (totalMembers - absDiff),
-                filter: isMobile ? (isActive ? 'blur(0)' : 'blur(4px)') : `blur(${blur}px)`,
-                transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-                display: shouldShow ? 'block' : 'none'
-              }}
+      {/* Team Section */}
+      <section id="team" className="section team">
+        <div className="section-content">
+          <h2 className="section-title" data-aos="fade-up">Meet Our Team</h2>
+          <p className="section-subtitle" data-aos="fade-up" style={{ textAlign: 'center', marginTop: '-2rem' }}>The amazing people behind FOSS Club</p>
+
+          <div className="team-slider-container">
+            <div
+              className="team-slider"
+              onMouseEnter={() => setTeamPaused(true)}
+              onMouseLeave={() => setTeamPaused(false)}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
             >
-             
-              <div className="member-image-wrapper">
-                <img src={member.photo} alt={member.name} className="shine-effect" />
-                <div className="member-overlay">
-                  <div className="social-links">
-                    <a href={`https://github.com/${member.social.github}`} target="_blank" rel="noopener noreferrer" className="magnetic">
-                      <i className="fab fa-github"></i>
-                    </a>
-                    <a href={`https://linkedin.com/in/${member.social.linkedin}`} target="_blank" rel="noopener noreferrer" className="magnetic">
-                      <i className="fab fa-linkedin"></i>
-                    </a>
-                    <a href={`https://instagram.com/${member.social.instagram}`} target="_blank" rel="noopener noreferrer" className="magnetic">
-                      <i className="fab fa-instagram"></i>
-                    </a>
+              {teamMembers.map((member, index) => {
+                // Calculate circular position relative to current slide
+                const totalMembers = teamMembers.length;
+                let diff = index - currentSlide;
+
+                // Normalize diff to shortest circular distance (-totalMembers/2 to totalMembers/2)
+                if (diff > totalMembers / 2) {
+                  diff = diff - totalMembers;
+                } else if (diff < -totalMembers / 2) {
+                  diff = diff + totalMembers;
+                }
+
+                // Determine position class
+                let position = '';
+                if (diff === 0) {
+                  position = 'active';
+                } else if (diff === -1) {
+                  position = 'prev';
+                } else if (diff === 1) {
+                  position = 'next';
+                } else if (Math.abs(diff) <= 2) {
+                  position = 'nearby';
+                }
+
+
+                const isActive = diff === 0;
+                const shouldShow = isMobile ? isActive : true;
+
+                // Calculate scale and opacity based on distance
+                const absDiff = Math.abs(diff);
+                const scale = absDiff === 0 ? 1 : absDiff === 1 ? 0.85 : Math.max(0.5, 1 - absDiff * 0.12);
+                const opacity = isMobile ? (isActive ? 1 : 0) : (absDiff === 0 ? 1 : absDiff === 1 ? 0.7 : Math.max(0.2, 0.6 - absDiff * 0.1));
+                const blur = absDiff === 0 ? 0 : absDiff === 1 ? 2 : Math.min(6, absDiff * 1.5);
+
+                // Calculate horizontal offset - use the normalized diff
+                const offsetX = diff * 120; // 120% per card for better spacing
+
+                if (!shouldShow) {
+                  return null;
+                }
+
+                return (
+                  <div
+                    key={index}
+                    className={`team-card ${position} ${isActive ? 'current-active' : ''}`}
+                    style={{
+                      transform: isMobile
+                        ? `translate(-50%, -50%) scale(1)`
+                        : `translate(calc(-50% + ${offsetX}%), -50%) scale(${scale})`,
+                      opacity: opacity,
+                      pointerEvents: isMobile ? (isActive ? 'auto' : 'none') : (absDiff <= 1 ? 'auto' : 'none'),
+                      zIndex: isMobile ? (isActive ? 10 : 0) : (totalMembers - absDiff),
+                      filter: isMobile ? (isActive ? 'blur(0)' : 'blur(4px)') : `blur(${blur}px)`,
+                      transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                      display: shouldShow ? 'block' : 'none'
+                    }}
+                  >
+
+                    <div className="member-image-wrapper">
+                      <img src={member.photo} alt={member.name} className="shine-effect" />
+                      <div className="member-overlay">
+                        <div className="social-links">
+                          <a href={`https://github.com/${member.social.github}`} target="_blank" rel="noopener noreferrer" className="magnetic">
+                            <i className="fab fa-github"></i>
+                          </a>
+                          <a href={`https://linkedin.com/in/${member.social.linkedin}`} target="_blank" rel="noopener noreferrer" className="magnetic">
+                            <i className="fab fa-linkedin"></i>
+                          </a>
+                          <a href={`https://instagram.com/${member.social.instagram}`} target="_blank" rel="noopener noreferrer" className="magnetic">
+                            <i className="fab fa-instagram"></i>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="member-info">
+                      <div className="member-role-badge">
+                        <i className={member.roleIcon}></i>
+                        <span>{member.role}</span>
+                      </div>
+                      <h3 className="interactive-text" data-text={member.name}>{member.name}</h3>
+                    </div>
                   </div>
-                </div>
-              </div>
-              <div className="member-info">
-                <div className="member-role-badge">
-                  <i className={member.roleIcon}></i>
-                  <span>{member.role}</span>
-                </div>
-                <h3 className="interactive-text" data-text={member.name}>{member.name}</h3>
-              </div>
+                );
+              })}
             </div>
-          );
-        })}
-      </div>
-      <div className="slider-controls">
-        <button className="slider-arrow prev magnetic" onClick={handlePrevSlide}>
-          <i className="fas fa-chevron-left"></i>
-        </button>
-        <div className="slider-dots">
-          {teamMembers.map((_, index) => (
-            <span
-              key={index}
-              className={`slider-dot ${currentSlide === index ? 'active' : ''}`}
-              onClick={() => setCurrentSlide(index)}
-            />
-          ))}
+            <div className="slider-controls">
+              <button className="slider-arrow prev magnetic" onClick={handlePrevSlide}>
+                <i className="fas fa-chevron-left"></i>
+              </button>
+              <div className="slider-dots">
+                {teamMembers.map((_, index) => (
+                  <span
+                    key={index}
+                    className={`slider-dot ${currentSlide === index ? 'active' : ''}`}
+                    onClick={() => setCurrentSlide(index)}
+                  />
+                ))}
+              </div>
+              <button className="slider-arrow next magnetic" onClick={handleNextSlide}>
+                <i className="fas fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
         </div>
-        <button className="slider-arrow next magnetic" onClick={handleNextSlide}>
-          <i className="fas fa-chevron-right"></i>
-        </button>
-      </div>
-    </div>
-  </div>
-</section>
+      </section>
 
       <section id="contact" className="section contact">
         <div className="section-content">
           <h2 className="section-title" data-aos="fade-up">Get In Touch</h2>
           <div className="contact-container">
-          <div className="contact-slider">
+            <div className="contact-slider">
               <div className="contact-info" data-aos="fade-right">
                 <div className="contact-profile">
                   <img src={clubLogo} alt="FOSS Club" />
@@ -934,7 +970,7 @@ const FossApp = () => {
               <li><a href="#projects">Projects</a></li>
             </ul>
           </div>
-          
+
         </div>
         <div className="footer-bottom">
           <p>&copy; {new Date().getFullYear()} FOSS Club. All rights reserved.</p>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import 'aos/dist/aos.css';
 import 'font-awesome/css/font-awesome.min.css';
@@ -12,13 +12,22 @@ import OfficeDashboard from './pages/OfficeDashboard';
 import Events from './pages/Events';
 import EventRegistration from './pages/EventRegistration';
 import ProtectedRoute from './components/ProtectedRoute';
-import CircleCursor from './components/CircleCursor';
+import CustomCursor from './components/CustomCursor';
+import Loader from './components/Loader';
+import NotFound from './components/NotFound';
 
 const App = () => {
+  const [isLoading, setIsLoading] = useState(true);
+
+  const handleLoadingComplete = () => {
+    setIsLoading(false);
+  };
+
   return (
     <AuthProvider>
       <BrowserRouter>
-        <CircleCursor />
+        {isLoading && <Loader onLoadingComplete={handleLoadingComplete} />}
+        <CustomCursor />
         <Routes>
           <Route path="/" element={<FossApp />} />
           <Route path="/login" element={<Login />} />
@@ -49,6 +58,7 @@ const App = () => {
           />
           <Route path="/events" element={<Events />} />
           <Route path="/events/:id" element={<EventRegistration />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

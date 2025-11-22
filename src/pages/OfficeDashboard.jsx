@@ -26,6 +26,11 @@ export default function OfficeDashboard() {
   const [showParticipants, setShowParticipants] = useState(false);
   const [allTasks, setAllTasks] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [editParticipantLimit, setEditParticipantLimit] = useState("");
 
   const eventsRef = useMemo(() => collection(db, "events"), []);
   const tasksRef = useMemo(() => collection(db, "tasks"), []);
@@ -39,12 +44,20 @@ export default function OfficeDashboard() {
         const registrations = Array.isArray(eventData.registrations) ? eventData.registrations : [];
         const participantCount = registrations.length;
         const isFull = eventData.participantLimit && participantCount >= eventData.participantLimit;
+        
+        // Check if event has ended
+        const now = new Date().getTime();
+        const eventDate = eventData.date ? new Date(eventData.date).getTime() : null;
+        const isEnded = eventDate ? now > eventDate : false;
+        const isActive = !isEnded;
 
         return {
           ...eventData,
           registrations,
           participantCount,
           isFull,
+          isEnded,
+          isActive,
         };
       });
 
@@ -113,8 +126,40 @@ export default function OfficeDashboard() {
   };
 
   const deleteEvent = async (id) => {
-    await deleteDoc(doc(db, "events", id));
-    await loadEvents();
+    if (window.confirm("Are you sure you want to delete this event?")) {
+      await deleteDoc(doc(db, "events", id));
+      await loadEvents();
+    }
+  };
+
+  const startEditing = (event) => {
+    setEditingEvent(event);
+    setEditTitle(event.title || "");
+    setEditDate(event.date || "");
+    setEditDesc(event.description || "");
+    setEditParticipantLimit(event.participantLimit ? event.participantLimit.toString() : "");
+  };
+
+  const cancelEditing = () => {
+    setEditingEvent(null);
+    setEditTitle("");
+    setEditDate("");
+    setEditDesc("");
+    setEditParticipantLimit("");
+  };
+
+  const saveEvent = async (e) => {
+    e.preventDefault();
+    if (!editingEvent) return;
+    
+    await updateEvent(editingEvent.id, {
+      title: editTitle,
+      date: editDate,
+      description: editDesc,
+      participantLimit: editParticipantLimit ? parseInt(editParticipantLimit) : null,
+    });
+    
+    cancelEditing();
   };
 
   return (
@@ -195,14 +240,33 @@ export default function OfficeDashboard() {
                           )}
                         </div>
                       )}
+                      <div className="mt-2">
+                        {event.isActive ? (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-[#00ff88]/40 bg-[#00ff88]/10 px-3 py-1 text-xs font-semibold text-[#00ff88]">
+                            Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-gray-400/40 bg-gray-500/10 px-3 py-1 text-xs font-semibold text-gray-300">
+                            Ended
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                       <button
                         onClick={() => loadParticipants(event)}
                         className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-200 transition hover:border-[#00ff88]/60 hover:text-[#00ff88]"
                       >
                         View Participants
                       </button>
+                      {event.isActive && (
+                        <button
+                          onClick={() => startEditing(event)}
+                          className="rounded-full border border-blue-400/40 bg-blue-500/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-blue-200 transition hover:border-blue-400 hover:bg-blue-500/30"
+                        >
+                          Edit
+                        </button>
+                      )}
                       <button
                         onClick={() => deleteEvent(event.id)}
                         className="rounded-full border border-red-400/40 bg-red-500/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-red-200 transition hover:border-red-400 hover:bg-red-500/30"
@@ -423,6 +487,76 @@ export default function OfficeDashboard() {
                   </div>
                 )}
               </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Edit Event Modal */}
+        {editingEvent && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-white/10 bg-[#03060d] p-8 shadow-2xl"
+            >
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="text-2xl font-semibold text-white">Edit Event</h2>
+                <button
+                  onClick={cancelEditing}
+                  className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-300 transition hover:border-red-400/50 hover:text-red-200"
+                >
+                  Cancel
+                </button>
+              </div>
+              <form onSubmit={saveEvent} className="space-y-5">
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-[0.3em] text-slate-400">Event Title</label>
+                  <input
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    placeholder="Zero to Production Workshop"
+                    className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-[#00ff88]/70 focus:bg-white/15 focus:ring-2 focus:ring-[#00ff88]/40"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-[0.3em] text-slate-400">Event Date</label>
+                  <input
+                    type="date"
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-[#00ff88]/70 focus:bg-white/15 focus:ring-2 focus:ring-[#00ff88]/40"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-[0.3em] text-slate-400">Event Narrative</label>
+                  <textarea
+                    value={editDesc}
+                    onChange={(e) => setEditDesc(e.target.value)}
+                    placeholder="Describe the experience, speaker lineup, or expected outcomes."
+                    className="h-32 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-indigo-400/70 focus:bg-white/15 focus:ring-2 focus:ring-indigo-400/40"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-[0.3em] text-slate-400">Participant Limit (Optional)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editParticipantLimit}
+                    onChange={(e) => setEditParticipantLimit(e.target.value)}
+                    placeholder="Leave empty for unlimited"
+                    className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-[#00ff88]/70 focus:bg-white/15 focus:ring-2 focus:ring-[#00ff88]/40"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-r from-[#00ff88] via-[#2ecc71] to-[#27ae60] px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-[#1a1a2e] shadow-lg shadow-[#00ff88]/30 transition hover:shadow-[#00ff88]/45 font-bold"
+                >
+                  <span className="absolute inset-0 translate-y-full bg-white/20 transition duration-300 group-hover:translate-y-0" />
+                  <span className="relative">Save Changes</span>
+                </button>
+              </form>
             </motion.div>
           </div>
         )}

@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { doc, getDoc, runTransaction, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, runTransaction } from "firebase/firestore";
 import { db } from "../firebase";
 
 const DEPARTMENTS = ["CSE", "AIE", "CYS", "CCE", "ECE", "MECH", "ARE", "RAI", "AIDS"];
 
 export default function EventRegistration() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(false);
   const [participantCount, setParticipantCount] = useState(0);
@@ -69,6 +70,8 @@ export default function EventRegistration() {
     
     setSubmitting(true);
     try {
+      // Use regular timestamp for transaction (serverTimestamp() not allowed in arrays during transactions)
+      const timestamp = new Date().toISOString();
       const newRegistration = {
         name,
         rollNo,
@@ -76,11 +79,7 @@ export default function EventRegistration() {
         department,
         year,
         phone,
-        createdAt: serverTimestamp(),
-      };
-      const clientRegistration = {
-        ...newRegistration,
-        createdAt: new Date().toISOString(),
+        createdAt: timestamp,
       };
       let updatedCount = participantCount;
       
@@ -92,6 +91,28 @@ export default function EventRegistration() {
         }
         const data = eventSnap.data();
         const registrations = Array.isArray(data.registrations) ? data.registrations : [];
+        
+        // Check for duplicate registration by email, roll number, or phone number
+        const normalizedEmail = email.toLowerCase().trim();
+        const normalizedRollNo = rollNo.toLowerCase().trim();
+        const normalizedPhone = phone.trim().replace(/\s+/g, ''); // Remove spaces from phone
+        
+        const isDuplicate = registrations.some((reg) => {
+          const regEmail = reg.email ? reg.email.toLowerCase().trim() : '';
+          const regRollNo = reg.rollNo ? reg.rollNo.toLowerCase().trim() : '';
+          const regPhone = reg.phone ? reg.phone.trim().replace(/\s+/g, '') : '';
+          
+          return (
+            (regEmail && normalizedEmail && regEmail === normalizedEmail) ||
+            (regRollNo && normalizedRollNo && regRollNo === normalizedRollNo) ||
+            (regPhone && normalizedPhone && regPhone === normalizedPhone)
+          );
+        });
+        
+        if (isDuplicate) {
+          throw new Error("You are already registered for this event with the same email, roll number, or phone number");
+        }
+        
         const now = new Date().getTime();
         const eventDate = data.date ? new Date(data.date).getTime() : null;
         const ended = eventDate ? now > eventDate : false;
@@ -101,13 +122,14 @@ export default function EventRegistration() {
         if (data.participantLimit && registrations.length >= data.participantLimit) {
           throw new Error("Event full");
         }
+        // Use regular timestamp instead of serverTimestamp() for transaction
         transaction.update(eventRef, {
           registrations: [...registrations, newRegistration],
         });
         updatedCount = registrations.length + 1;
       });
       
-      const newRegistrations = [...(event?.registrations || []), clientRegistration];
+      const newRegistrations = [...(event?.registrations || []), newRegistration];
       setEvent((prev) => (prev ? { ...prev, registrations: newRegistrations } : prev));
       setParticipantCount(updatedCount);
       if (event?.participantLimit && updatedCount >= event.participantLimit) {
@@ -121,22 +143,30 @@ export default function EventRegistration() {
       setDepartment("");
       setYear("");
       setPhone("");
-      setTimeout(() => setSaved(false), 5000);
+      
+      // Navigate to events page after 2 seconds
+      setTimeout(() => {
+        navigate("/events");
+      }, 2000);
     } catch (error) {
       console.error("Registration failed", error);
-      const message =
-        error.message === "Event has ended"
-          ? "This event has ended. Registration is closed."
-          : error.message === "Event full"
-          ? "This event is now full. Registration is closed."
-          : "Registration failed. Please try again.";
-      alert(message);
+      let message = "Registration failed. Please try again.";
+      
       if (error.message === "Event has ended") {
+        message = "This event has ended. Registration is closed.";
         setIsEnded(true);
-      }
-      if (error.message === "Event full") {
+      } else if (error.message === "Event full") {
+        message = "This event is now full. Registration is closed.";
         setIsFull(true);
+      } else if (error.message === "Event not found") {
+        message = "Event not found. Please check the registration link.";
+      } else if (error.message === "You are already registered for this event") {
+        message = "You are already registered for this event.";
+      } else if (error.message) {
+        message = error.message;
       }
+      
+      alert(message);
     } finally {
       setSubmitting(false);
     }
@@ -215,7 +245,7 @@ export default function EventRegistration() {
                   </div>
                 ) : saved ? (
                   <div className="rounded-2xl border border-emerald-400/40 bg-emerald-500/20 px-4 py-3 text-sm font-medium text-emerald-200">
-                    You're booked! We'll email you the playbook and schedule shortly.
+                    You're booked! .
                   </div>
                 ) : null}
                 <div className="grid gap-6 md:grid-cols-2">

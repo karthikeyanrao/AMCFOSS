@@ -58,11 +58,23 @@ export default function Events() {
         setEvents(sortedEvents);
       } catch (err) {
         console.error("Failed to load events:", err);
-        setError(
-          err.code === 'permission-denied'
-            ? "Unable to load events. Please check Firebase security rules allow public read access to 'events' collection."
-            : "Failed to load events. Please try again later."
-        );
+        console.error("Error details:", {
+          code: err.code,
+          message: err.message,
+          stack: err.stack
+        });
+        
+        let errorMessage = "Failed to load events. Please try again later.";
+        
+        if (err.code === 'permission-denied') {
+          errorMessage = "Unable to load events. Please check Firebase security rules allow public read access to 'events' collection.";
+        } else if (err.code === 'unavailable') {
+          errorMessage = "Network error. Please check your internet connection and try again.";
+        } else if (err.message) {
+          errorMessage = `Error: ${err.message}`;
+        }
+        
+        setError(errorMessage);
         setEvents([]);
       } finally {
         setLoading(false);
