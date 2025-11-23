@@ -30,8 +30,21 @@ const HomeEvents = memo(({ countdown1 }) => {
           const registrations = Array.isArray(eventData.registrations) ? eventData.registrations : [];
           const participantCount = registrations.length;
           const now = new Date().getTime();
-          const eventDate = eventData.date ? new Date(eventData.date).getTime() : null;
-          const isEnded = eventDate ? now > eventDate : false;
+          // Check if event has ended - use end time if available, otherwise use date
+          let eventEndTime = null;
+          if (eventData.date) {
+            if (eventData.time) {
+              // Combine date and time
+              const dateTimeStr = `${eventData.date}T${eventData.time}`;
+              eventEndTime = new Date(dateTimeStr).getTime();
+            } else {
+              // Use date only (end of day)
+              const dateOnly = new Date(eventData.date);
+              dateOnly.setHours(23, 59, 59, 999);
+              eventEndTime = dateOnly.getTime();
+            }
+          }
+          const isEnded = eventEndTime ? now > eventEndTime : false;
           const isFull = eventData.participantLimit && participantCount >= eventData.participantLimit;
 
           return {
@@ -155,10 +168,23 @@ const HomeEvents = memo(({ countdown1 }) => {
                     Event Full
                   </button>
                 ) : (
-                  <Link to={`/events/${event.id}`} className="primary-btn">
-                    Register Now
-                    <i className="fas fa-arrow-right" style={{ marginLeft: '0.5rem' }}></i>
-                  </Link>
+                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <Link to={`/events/${event.id}`} className="primary-btn">
+                      Register Now
+                      <i className="fas fa-arrow-right" style={{ marginLeft: '0.5rem' }}></i>
+                    </Link>
+                    {event.eventLink && (
+                      <a
+                        href={event.eventLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="primary-btn join-now-btn"
+                      >
+                        Join Now
+                        <i className="fas fa-external-link-alt" style={{ marginLeft: '0.5rem' }}></i>
+                      </a>
+                    )}
+                  </div>
                 )}
                 {event.participantLimit && (
                   <div className="event-participants">
@@ -211,6 +237,7 @@ const FossApp = () => {
   const [touchStart, setTouchStart] = useState(null);
   const [contactStatus, setContactStatus] = useState(null);
   const [teamPaused, setTeamPaused] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
 
   // Refs
   const navbarRef = useRef(null);
@@ -224,8 +251,8 @@ const FossApp = () => {
       AOS.init({ duration: 800, offset: 100, once: true });
     } else {
       // Completely disable AOS on mobile to prevent overflow issues
-      AOS.init({ 
-        disable: function() {
+      AOS.init({
+        disable: function () {
           return true; // Always disable on mobile
         },
         duration: 0,
@@ -322,23 +349,34 @@ const FossApp = () => {
   // Typing effect
   useEffect(() => {
     const text = "Where Innovation Meets Open Source";
-    setTypedText(""); // Reset text first
+    setTypedText(""); 
     let index = 0;
+    let timeoutId;
 
     const typeWriter = () => {
       if (index < text.length) {
         setTypedText(text.substring(0, index + 1));
         index++;
-        setTimeout(typeWriter, 50);
+        timeoutId = setTimeout(typeWriter, 50);
       } else {
-        setTimeout(() => {
+        // Wait 3 seconds before clearing
+        timeoutId = setTimeout(() => {
           setTypedText("");
           setRestart(prev => !prev);
         }, 3000);
       }
     };
 
-    typeWriter();
+    // Small delay to ensure component is mounted
+    timeoutId = setTimeout(() => {
+      typeWriter();
+    }, 100);
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, [restart]);
 
   // Countdown timer
@@ -368,7 +406,7 @@ const FossApp = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Particles.js initialization
+  // Particles.js initialization - full page background
   useEffect(() => {
     const loadParticles = async () => {
       try {
@@ -377,7 +415,16 @@ const FossApp = () => {
         script.async = true;
         script.onload = () => {
           if (window.particlesJS) {
-            window.particlesJS("particles-js", {
+            // Create particles container for full page background
+            let particlesContainer = document.getElementById("particles-js-full");
+            if (!particlesContainer) {
+              particlesContainer = document.createElement('div');
+              particlesContainer.id = "particles-js-full";
+              particlesContainer.className = "particles-full-background";
+              document.body.insertBefore(particlesContainer, document.body.firstChild);
+            }
+            
+            window.particlesJS("particles-js-full", {
               particles: {
                 number: { value: 40 },
                 color: { value: "#ffffff" },
@@ -417,16 +464,16 @@ const FossApp = () => {
 
     handleResize();
     preventHorizontalScroll();
-    
+
     window.addEventListener('resize', () => {
       handleResize();
       preventHorizontalScroll();
     });
-    
+
     // Run on initial load and after animations
     setTimeout(preventHorizontalScroll, 100);
     setTimeout(preventHorizontalScroll, 3000);
-    
+
     return () => {
       window.removeEventListener('resize', handleResize);
     };
@@ -632,7 +679,7 @@ const FossApp = () => {
             <li><a href="#events" onClick={(e) => smoothScroll(e, '#events')}>Events</a></li>
             <li><a href="#projects" onClick={(e) => smoothScroll(e, '#projects')}>Projects</a></li>
             <li><a href="#team" onClick={(e) => smoothScroll(e, '#team')}>Team</a></li>
-
+            <li><a href="#contact" onClick={(e) => smoothScroll(e, '#contact')}>Contact</a></li>
             <li className="auth-links">
               {user ? (
                 <Link
@@ -645,7 +692,7 @@ const FossApp = () => {
                 <Link to="/login" className="auth-link">Login</Link>
               )}
 
-              <button className="join-btn" onClick={(e) => smoothScroll(e, '#contact')}>Join Us</button>
+             
             </li>
           </ul>
         </div>
@@ -661,7 +708,9 @@ const FossApp = () => {
             <span className="glitch-layer glitch-layer-1">#BuildWithFOSS</span>
             <span className="glitch-layer glitch-layer-2">#BuildWithFOSS</span>
           </h1>
-          <h2 className="typewriter hero-subtitle">{typedText}</h2>
+          <h2 className={`hero-subtitle ${typedText ? 'typewriter' : 'typewriter-empty'}`}>
+            {typedText}
+          </h2>
           <p className="hero-description">
             Join a vibrant community of developers, designers, and innovators building the future of technology through
             <span className="highlight-text"> open-source collaboration</span> and <span className="highlight-text">cutting-edge innovation</span>.
@@ -689,10 +738,13 @@ const FossApp = () => {
               <span>Learn More</span>
               <i className="fas fa-info-circle"></i>
             </a>
+            <button onClick={() => setShowJoinModal(true)} className="btn primary-btn">
+              <span>Join Us</span>
+              <i className="fas fa-user-plus"></i>
+            </button>
           </div>
         </div>
         <div className="hero-overlay"></div>
-        <div id="particles-js" className="hero-particles"></div>
         <div className="scroll-indicator">
           <span className="mouse">
             <span className="wheel"></span>
@@ -954,6 +1006,37 @@ const FossApp = () => {
           </div>
         </div>
       </section>
+
+      {/* Join Us Modal */}
+      {showJoinModal && (
+        <div className="join-modal-overlay" onClick={() => setShowJoinModal(false)}>
+          <div className="join-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="join-modal-close" onClick={() => setShowJoinModal(false)}>
+              <i className="fas fa-times"></i>
+            </button>
+            <h3>Join Our Community</h3>
+            <p>Connect with us on our social platforms</p>
+            <div className="join-social-links">
+              <a href="https://discord.gg/4vsg5Fpw" target="_blank" rel="noopener noreferrer" className="join-social-link">
+                <i className="fab fa-discord"></i>
+                <span>Discord</span>
+              </a>
+              <a href="https://instagram.com/amcfoss" target="_blank" rel="noopener noreferrer" className="join-social-link">
+                <i className="fab fa-instagram"></i>
+                <span>Instagram</span>
+              </a>
+              <a href="https://linkedin.com/company/amcfoss" target="_blank" rel="noopener noreferrer" className="join-social-link">
+                <i className="fab fa-linkedin"></i>
+                <span>LinkedIn</span>
+              </a>
+              <a href="https://chat.whatsapp.com/JNjiwWwXNI77EUznWUwtUX" target="_blank" rel="noopener noreferrer" className="join-social-link">
+                <i className="fab fa-whatsapp"></i>
+                <span>WhatsApp</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
 
       <footer className="footer">
         <div className="footer-content">

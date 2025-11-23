@@ -32,10 +32,22 @@ export default function EventRegistration() {
           const eventData = { id: snap.id, ...snap.data() };
           const registrations = Array.isArray(eventData.registrations) ? eventData.registrations : [];
           
-          // Check if event has ended
+          // Check if event has ended - use end time if available, otherwise use date
           const now = new Date().getTime();
-          const eventDate = eventData.date ? new Date(eventData.date).getTime() : null;
-          const ended = eventDate ? now > eventDate : false;
+          let eventEndTime = null;
+          if (eventData.date) {
+            if (eventData.time) {
+              // Combine date and time
+              const dateTimeStr = `${eventData.date}T${eventData.time}`;
+              eventEndTime = new Date(dateTimeStr).getTime();
+            } else {
+              // Use date only (end of day)
+              const dateOnly = new Date(eventData.date);
+              dateOnly.setHours(23, 59, 59, 999);
+              eventEndTime = dateOnly.getTime();
+            }
+          }
+          const ended = eventEndTime ? now > eventEndTime : false;
           const count = registrations.length;
           const full = eventData.participantLimit && count >= eventData.participantLimit;
           
@@ -114,8 +126,20 @@ export default function EventRegistration() {
         }
         
         const now = new Date().getTime();
-        const eventDate = data.date ? new Date(data.date).getTime() : null;
-        const ended = eventDate ? now > eventDate : false;
+        let eventEndTime = null;
+        if (data.date) {
+          if (data.time) {
+            // Combine date and time
+            const dateTimeStr = `${data.date}T${data.time}`;
+            eventEndTime = new Date(dateTimeStr).getTime();
+          } else {
+            // Use date only (end of day)
+            const dateOnly = new Date(data.date);
+            dateOnly.setHours(23, 59, 59, 999);
+            eventEndTime = dateOnly.getTime();
+          }
+        }
+        const ended = eventEndTime ? now > eventEndTime : false;
         if (ended) {
           throw new Error("Event has ended");
         }

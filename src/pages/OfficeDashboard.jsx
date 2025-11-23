@@ -18,8 +18,10 @@ export default function OfficeDashboard() {
   const [events, setEvents] = useState([]);
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
   const [desc, setDesc] = useState("");
   const [participantLimit, setParticipantLimit] = useState("");
+  const [eventLink, setEventLink] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [participants, setParticipants] = useState([]);
@@ -29,8 +31,10 @@ export default function OfficeDashboard() {
   const [editingEvent, setEditingEvent] = useState(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDate, setEditDate] = useState("");
+  const [editTime, setEditTime] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editParticipantLimit, setEditParticipantLimit] = useState("");
+  const [editEventLink, setEditEventLink] = useState("");
 
   const eventsRef = useMemo(() => collection(db, "events"), []);
   const tasksRef = useMemo(() => collection(db, "tasks"), []);
@@ -45,10 +49,22 @@ export default function OfficeDashboard() {
         const participantCount = registrations.length;
         const isFull = eventData.participantLimit && participantCount >= eventData.participantLimit;
         
-        // Check if event has ended
+        // Check if event has ended - use end time if available, otherwise use date
         const now = new Date().getTime();
-        const eventDate = eventData.date ? new Date(eventData.date).getTime() : null;
-        const isEnded = eventDate ? now > eventDate : false;
+        let eventEndTime = null;
+        if (eventData.date) {
+          if (eventData.time) {
+            // Combine date and time
+            const dateTimeStr = `${eventData.date}T${eventData.time}`;
+            eventEndTime = new Date(dateTimeStr).getTime();
+          } else {
+            // Use date only (end of day)
+            const dateOnly = new Date(eventData.date);
+            dateOnly.setHours(23, 59, 59, 999);
+            eventEndTime = dateOnly.getTime();
+          }
+        }
+        const isEnded = eventEndTime ? now > eventEndTime : false;
         const isActive = !isEnded;
 
         return {
@@ -61,7 +77,19 @@ export default function OfficeDashboard() {
         };
       });
 
-      setEvents(eventsList);
+      // Sort events: active first, then date-wise
+      const sortedEvents = eventsList.sort((a, b) => {
+        // Active events first
+        if (a.isActive !== b.isActive) {
+          return a.isActive ? -1 : 1;
+        }
+        // Then sort by date (ascending for active, descending for ended)
+        const dateA = a.date ? new Date(a.date).getTime() : 0;
+        const dateB = b.date ? new Date(b.date).getTime() : 0;
+        return a.isActive ? dateA - dateB : dateB - dateA;
+      });
+      
+      setEvents(sortedEvents);
     } finally {
       setLoading(false);
     }
@@ -101,15 +129,19 @@ export default function OfficeDashboard() {
     await addDoc(eventsRef, {
       title,
       date: date, 
+      time: time || null,
       description: desc || "",
       participantLimit: participantLimit ? parseInt(participantLimit) : null,
+      eventLink: eventLink.trim() || null,
       registrations: [],
       createdAt: serverTimestamp(),
     });
     setTitle("");
     setDate("");
+    setTime("");
     setDesc("");
     setParticipantLimit("");
+    setEventLink("");
     await loadEvents();
   };
 
@@ -136,16 +168,20 @@ export default function OfficeDashboard() {
     setEditingEvent(event);
     setEditTitle(event.title || "");
     setEditDate(event.date || "");
+    setEditTime(event.time || "");
     setEditDesc(event.description || "");
     setEditParticipantLimit(event.participantLimit ? event.participantLimit.toString() : "");
+    setEditEventLink(event.eventLink || "");
   };
 
   const cancelEditing = () => {
     setEditingEvent(null);
     setEditTitle("");
     setEditDate("");
+    setEditTime("");
     setEditDesc("");
     setEditParticipantLimit("");
+    setEditEventLink("");
   };
 
   const saveEvent = async (e) => {
@@ -155,8 +191,10 @@ export default function OfficeDashboard() {
     await updateEvent(editingEvent.id, {
       title: editTitle,
       date: editDate,
+      time: editTime || null,
       description: editDesc,
       participantLimit: editParticipantLimit ? parseInt(editParticipantLimit) : null,
+      eventLink: editEventLink.trim() || null,
     });
     
     cancelEditing();
@@ -311,6 +349,25 @@ export default function OfficeDashboard() {
                     onChange={(e) => setDate(e.target.value)}
                     className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-[#00ff88]/70 focus:bg-white/15 focus:ring-2 focus:ring-[#00ff88]/40"
                     required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-[0.3em] text-slate-400">Event Time (Optional)</label>
+                  <input
+                    type="time"
+                    value={time}
+                    onChange={(e) => setTime(e.target.value)}
+                    className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-[#00ff88]/70 focus:bg-white/15 focus:ring-2 focus:ring-[#00ff88]/40"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-[0.3em] text-slate-400">Event Link (Optional)</label>
+                  <input
+                    type="url"
+                    value={eventLink}
+                    onChange={(e) => setEventLink(e.target.value)}
+                    placeholder="https://meet.google.com/..."
+                    className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-[#00ff88]/70 focus:bg-white/15 focus:ring-2 focus:ring-[#00ff88]/40"
                   />
                 </div>
                 <div className="space-y-2">
@@ -527,6 +584,25 @@ export default function OfficeDashboard() {
                     onChange={(e) => setEditDate(e.target.value)}
                     className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-[#00ff88]/70 focus:bg-white/15 focus:ring-2 focus:ring-[#00ff88]/40"
                     required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-[0.3em] text-slate-400">Event Time (Optional)</label>
+                  <input
+                    type="time"
+                    value={editTime}
+                    onChange={(e) => setEditTime(e.target.value)}
+                    className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-[#00ff88]/70 focus:bg-white/15 focus:ring-2 focus:ring-[#00ff88]/40"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-[0.3em] text-slate-400">Event Link (Optional)</label>
+                  <input
+                    type="url"
+                    value={editEventLink}
+                    onChange={(e) => setEditEventLink(e.target.value)}
+                    placeholder="https://meet.google.com/..."
+                    className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-[#00ff88]/70 focus:bg-white/15 focus:ring-2 focus:ring-[#00ff88]/40"
                   />
                 </div>
                 <div className="space-y-2">

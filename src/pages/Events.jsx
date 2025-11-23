@@ -21,10 +21,22 @@ export default function Events() {
           const eventData = { id: docSnap.id, ...docSnap.data() };
           const registrations = Array.isArray(eventData.registrations) ? eventData.registrations : [];
           
-          // Check if event has ended
+          // Check if event has ended - use end time if available, otherwise use date
           const now = new Date().getTime();
-          const eventDate = eventData.date ? new Date(eventData.date).getTime() : null;
-          const isEnded = eventDate ? now > eventDate : false;
+          let eventEndTime = null;
+          if (eventData.date) {
+            if (eventData.time) {
+              // Combine date and time
+              const dateTimeStr = `${eventData.date}T${eventData.time}`;
+              eventEndTime = new Date(dateTimeStr).getTime();
+            } else {
+              // Use date only (end of day)
+              const dateOnly = new Date(eventData.date);
+              dateOnly.setHours(23, 59, 59, 999);
+              eventEndTime = dateOnly.getTime();
+            }
+          }
+          const isEnded = eventEndTime ? now > eventEndTime : false;
           const participantCount = registrations.length;
           const isFull = eventData.participantLimit && participantCount >= eventData.participantLimit;
           
@@ -192,13 +204,26 @@ export default function Events() {
                         Event Full
                       </button>
                     ) : (
-                      <Link
-                        to={`/events/${event.id}`}
-                        className="register-btn-modern"
-                      >
-                        Register
-                        <i className="fas fa-arrow-right"></i>
-                      </Link>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Link
+                          to={`/events/${event.id}`}
+                          className="register-btn-modern"
+                        >
+                          Register
+                          <i className="fas fa-arrow-right"></i>
+                        </Link>
+                        {event.eventLink && (
+                          <a
+                            href={event.eventLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="register-btn-modern join-now-btn"
+                          >
+                            Join Now
+                            <i className="fas fa-external-link-alt"></i>
+                          </a>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
