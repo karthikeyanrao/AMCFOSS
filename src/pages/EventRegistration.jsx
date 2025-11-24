@@ -178,7 +178,7 @@ export default function EventRegistration() {
       
       // Navigate to events page after 2 seconds
       setTimeout(() => {
-        navigate("/events");
+        navigate("/");
       }, 2000);
     } catch (error) {
       console.error("Registration failed", error);
