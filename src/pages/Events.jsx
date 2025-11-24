@@ -68,6 +68,7 @@ export default function Events() {
         });
         
         setEvents(sortedEvents);
+        console.log("Events loaded:", sortedEvents.length, "events");
       } catch (err) {
         console.error("Failed to load events:", err);
         console.error("Error details:", {
@@ -104,7 +105,7 @@ export default function Events() {
         <div className="absolute -right-24 bottom-8 h-[28rem] w-[28rem] rounded-full bg-emerald-500/25 blur-3xl" />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col px-6 py-16 lg:px-12">
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col px-4 py-16 sm:px-6 lg:px-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -145,7 +146,7 @@ export default function Events() {
           </motion.div>
         ) : null}
 
-        <div className="mt-12 events-grid-modern">
+        <div className="mt-8 sm:mt-12 events-grid-modern w-full">
           {events.map((event, idx) => {
             const eventDate = event.date ? new Date(event.date) : null;
             const day = eventDate ? eventDate.getDate() : "TBA";

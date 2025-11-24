@@ -1399,10 +1399,11 @@ select,
 /* Modern Events Grid (for Events.jsx page) */
 .events-grid-modern {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 2rem;
     max-width: 1400px;
     margin: 0 auto;
+    width: 100%;
 }
 
 .event-card-modern {
@@ -2846,12 +2847,17 @@ select,
     }
 
     .events-grid-modern {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
         gap: 1.5rem;
+        padding: 0;
+        width: 100%;
+        max-width: 100%;
     }
 
     .event-card-modern {
         min-width: auto;
+        width: 100%;
+        max-width: 100%;
     }
 
     .event-date-modern {
@@ -2864,6 +2870,25 @@ select,
 
     .event-details-modern {
         padding: 1.5rem;
+    }
+
+    .event-header-modern {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .event-footer-modern {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .event-footer-modern .flex {
+        width: 100%;
+    }
+
+    .register-btn-modern {
+        width: 100%;
+        justify-content: center;
     }
 
     .event-title-modern {

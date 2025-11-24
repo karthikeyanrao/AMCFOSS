@@ -48,10 +48,7 @@ export default function Login() {
       subtitle="Sign in with your AMC FOSS college email to unlock your personalised workspace."
       footer={
         <span>
-          New contributor?{" "}
-          <Link to="/register" className="text-[#00ff88] hover:text-[#2ecc71]">
-            Create an account
-          </Link>
+          
         </span>
       }
     >

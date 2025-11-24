@@ -58,6 +58,14 @@ export default function EventRegistration() {
         } else {
           setEvent(null);
         }
+      } catch (error) {
+        console.error("Failed to load event:", error);
+        if (error.code === 'permission-denied') {
+          alert("Permission denied. Please check Firebase security rules allow public read access to events.");
+        } else {
+          alert("Failed to load event. Please try again.");
+        }
+        setEvent(null);
       } finally {
         setLoading(false);
       }
@@ -176,7 +184,9 @@ export default function EventRegistration() {
       console.error("Registration failed", error);
       let message = "Registration failed. Please try again.";
       
-      if (error.message === "Event has ended") {
+      if (error.code === 'permission-denied') {
+        message = "Permission denied. Please check Firebase security rules allow public registration for events.";
+      } else if (error.message === "Event has ended") {
         message = "This event has ended. Registration is closed.";
         setIsEnded(true);
       } else if (error.message === "Event full") {
@@ -184,7 +194,7 @@ export default function EventRegistration() {
         setIsFull(true);
       } else if (error.message === "Event not found") {
         message = "Event not found. Please check the registration link.";
-      } else if (error.message === "You are already registered for this event") {
+      } else if (error.message === "You are already registered for this event" || error.message.includes("already registered")) {
         message = "You are already registered for this event.";
       } else if (error.message) {
         message = error.message;
