@@ -2663,6 +2663,12 @@ select,
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    /* Ensure AOS-tagged elements stay visible when animations are disabled on mobile */
+    [data-aos] {
+        opacity: 1 !important;
+        transform: none !important;
+    }
+
     .nav-links {
         display: none;
     }
