@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proctored MCQ Exam - Phase 1</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Warning Modal -->
+    <div id="warningModal" class="modal">
+        <div class="modal-content">
+            <h2>⚠️ Fullscreen Required</h2>
+            <p>You must remain in fullscreen mode during the exam.</p>
+            <p class="timer">Press F12 to return to fullscreen: <span id="countdown">5</span>s</p>
+            <div class="warning-note">Failure to comply will result in elimination!</div>
+        </div>
+    </div>
+
+    <!-- Elimination Screen -->
+    <div id="eliminationScreen" class="elimination-screen hidden">
+        <div class="elimination-content">
+            <h1>❌ ELIMINATED</h1>
+            <p>You have violated exam protocols.</p>
+            <p class="reason" id="eliminationReason"></p>
+            <p class="contact">Please contact the exam administrator.</p>
+        </div>
+    </div>
+
+    <!-- Welcome Screen -->
+    <div id="welcomeScreen" class="welcome-screen">
+        <div class="welcome-content">
+            <h1>🎯 Proctored MCQ Examination</h1>
+            <h2>Phase 1 - Preliminary Round</h2>
+            
+            <div class="instructions">
+                <h3>📋 Exam Rules & Instructions:</h3>
+                <ul>
+                    <li>✓ The exam will run in <strong>FULLSCREEN MODE</strong> only</li>
+                    <li>✓ <strong>Mouse navigation ONLY</strong> - Keyboard is disabled</li>
+                    <li>✓ Copy/Paste is <strong>DISABLED</strong></li>
+                    <li>✓ Right-click is <strong>DISABLED</strong></li>
+                    <li>✓ Press <strong>Alt+Q</strong> to exit the exam</li>
+                    <li>✓ If you exit fullscreen, you have <strong>5 seconds</strong> to press F12</li>
+                    <li>⚠️ Violation of any rule will result in <strong>ELIMINATION</strong></li>
+                </ul>
+            </div>
+
+            <div class="candidate-info">
+                <input type="text" id="candidateName" placeholder="Enter Your Name" required>
+                <input type="text" id="candidateId" placeholder="Enter Your ID/Roll Number" required>
+            </div>
+
+            <button class="start-btn" onclick="startExam()">Start Exam</button>
+        </div>
+    </div>
+
+    <!-- Exam Screen -->
+    <div id="examScreen" class="exam-screen hidden">
+        <div class="exam-header">
+            <div class="candidate-details">
+                <span id="displayName"></span> | <span id="displayId"></span>
+            </div>
+            <div class="timer-display">
+                Time Remaining: <span id="examTimer">30:00</span>
+            </div>
+            <div class="question-counter">
+                Question <span id="currentQuestion">1</span> of <span id="totalQuestions">10</span>
+            </div>
+        </div>
+
+        <div class="exam-container">
+            <div class="question-section">
+                <h3 class="question-text" id="questionText"></h3>
+                <div class="options-container" id="optionsContainer"></div>
+            </div>
+
+            <div class="navigation-buttons">
+                <button class="nav-btn" id="prevBtn" onclick="previousQuestion()">← Previous</button>
+                <button class="nav-btn" id="nextBtn" onclick="nextQuestion()">Next →</button>
+                <button class="submit-btn hidden" id="submitBtn" onclick="submitExam()">Submit Exam</button>
+            </div>
+
+            <div class="question-palette">
+                <h4>Question Palette</h4>
+                <div id="palette" class="palette-grid"></div>
+            </div>
+        </div>
+
+        <div class="exit-hint">Press Alt+Q to exit exam</div>
+    </div>
+
+    <!-- Results Screen -->
+    <div id="resultsScreen" class="results-screen hidden">
+        <div class="results-content">
+            <h1>🎉 Exam Completed!</h1>
+            <div class="results-details">
+                <p><strong>Name:</strong> <span id="resultName"></span></p>
+                <p><strong>ID:</strong> <span id="resultId"></span></p>
+                <p><strong>Score:</strong> <span id="resultScore"></span></p>
+                <p><strong>Percentage:</strong> <span id="resultPercentage"></span></p>
+            </div>
+            <button class="restart-btn" onclick="location.reload()">Exit</button>
+        </div>
+    </div>
+
+    <script src="proctoring.js"></script>
+    <script src="exam.js"></script>
+</body>
+</html>

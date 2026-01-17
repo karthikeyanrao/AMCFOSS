@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-brands-svg-icons": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
@@ -10,6 +11,7 @@
     "aos": "^2.3.4",
     "autoprefixer": "^10.4.20",
     "cra-template": "1.2.0",
+    "emailjs-com": "^3.2.0",
     "firebase": "^10.14.0",
     "font-awesome": "^4.7.0",
     "framer-motion": "^12.5.0",

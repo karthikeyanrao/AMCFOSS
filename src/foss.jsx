@@ -168,22 +168,64 @@ const HomeEvents = memo(({ countdown1 }) => {
                     Event Full
                   </button>
                 ) : (
-                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    <Link to={`/events/${event.id}`} className="primary-btn">
-                      Register Now
-                      <i className="fas fa-arrow-right" style={{ marginLeft: '0.5rem' }}></i>
-                    </Link>
-                    {event.eventLink && (
-                      <a
-                        href={event.eventLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="primary-btn join-now-btn"
-                      >
-                        Join Now
-                        <i className="fas fa-external-link-alt" style={{ marginLeft: '0.5rem' }}></i>
-                      </a>
-                    )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%' }}>
+                    <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                      <Link to={`/events/${event.id}`} className="primary-btn">
+                        Register Now
+                        <i className="fas fa-arrow-right" style={{ marginLeft: '0.5rem' }}></i>
+                      </Link>
+                      {event.eventLink && (
+                        <a
+                          href={event.eventLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="primary-btn join-now-btn"
+                        >
+                          Join Now
+                          <i className="fas fa-external-link-alt" style={{ marginLeft: '0.5rem' }}></i>
+                        </a>
+                      )}
+                    </div>
+                    {event.hasPrelims && (() => {
+                      const now = new Date().getTime();
+                      const prelimsDeadline = event.prelimsDeadline ? new Date(event.prelimsDeadline).getTime() : null;
+                      const prelimsExpired = prelimsDeadline && now > prelimsDeadline;
+
+                      return (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          {prelimsDeadline && (
+                            <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                              <i className="fas fa-clock" style={{ marginRight: '0.25rem' }}></i>
+                              Prelims Deadline: {new Date(event.prelimsDeadline).toLocaleString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </div>
+                          )}
+                          {prelimsExpired ? (
+                            <button className="primary-btn" disabled style={{ opacity: 0.5 }}>
+                              <i className="fas fa-hourglass-end" style={{ marginRight: '0.5rem' }}></i>
+                              Prelims Closed
+                            </button>
+                          ) : (
+                            <Link
+                              to="/exam"
+                              className="primary-btn"
+                              style={{
+                                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                                borderColor: '#f59e0b'
+                              }}
+                            >
+                              <i className="fas fa-pen-fancy" style={{ marginRight: '0.5rem' }}></i>
+                              Start Prelims
+                            </Link>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
                 {event.participantLimit && (
@@ -349,7 +391,7 @@ const FossApp = () => {
   // Typing effect
   useEffect(() => {
     const text = "Where Innovation Meets Open Source";
-    setTypedText(""); 
+    setTypedText("");
     let index = 0;
     let timeoutId;
 
@@ -423,7 +465,7 @@ const FossApp = () => {
               particlesContainer.className = "particles-full-background";
               document.body.insertBefore(particlesContainer, document.body.firstChild);
             }
-            
+
             window.particlesJS("particles-js-full", {
               particles: {
                 number: { value: 40 },
@@ -692,7 +734,7 @@ const FossApp = () => {
                 <Link to="/login" className="auth-link">Login</Link>
               )}
 
-             
+
             </li>
           </ul>
         </div>

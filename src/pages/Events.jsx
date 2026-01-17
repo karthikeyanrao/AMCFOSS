@@ -20,7 +20,7 @@ export default function Events() {
         const eventsList = snap.docs.map((docSnap) => {
           const eventData = { id: docSnap.id, ...docSnap.data() };
           const registrations = Array.isArray(eventData.registrations) ? eventData.registrations : [];
-          
+
           // Check if event has ended - use end time if available, otherwise use date
           const now = new Date().getTime();
           let eventEndTime = null;
@@ -39,7 +39,7 @@ export default function Events() {
           const isEnded = eventEndTime ? now > eventEndTime : false;
           const participantCount = registrations.length;
           const isFull = eventData.participantLimit && participantCount >= eventData.participantLimit;
-          
+
           return {
             ...eventData,
             registrations,
@@ -48,7 +48,7 @@ export default function Events() {
             isEnded,
           };
         });
-        
+
         // Sort events: upcoming first (by date ascending), then ended (by date descending)
         const sortedEvents = eventsList.sort((a, b) => {
           const dateA = a.date ? new Date(a.date).getTime() : 0;
@@ -56,7 +56,7 @@ export default function Events() {
           const now = new Date().getTime();
           const aEnded = a.isEnded || (dateA && now > dateA);
           const bEnded = b.isEnded || (dateB && now > dateB);
-          
+
           // If both ended or both upcoming, sort by date
           if (aEnded === bEnded) {
             // Ended events: most recent first (descending)
@@ -66,7 +66,7 @@ export default function Events() {
           // Upcoming events come before ended events
           return aEnded ? 1 : -1;
         });
-        
+
         setEvents(sortedEvents);
         console.log("Events loaded:", sortedEvents.length, "events");
       } catch (err) {
@@ -76,9 +76,9 @@ export default function Events() {
           message: err.message,
           stack: err.stack
         });
-        
+
         let errorMessage = "Failed to load events. Please try again later.";
-        
+
         if (err.code === 'permission-denied') {
           errorMessage = "Unable to load events. Please check Firebase security rules allow public read access to 'events' collection.";
         } else if (err.code === 'unavailable') {
@@ -86,7 +86,7 @@ export default function Events() {
         } else if (err.message) {
           errorMessage = `Error: ${err.message}`;
         }
-        
+
         setError(errorMessage);
         setEvents([]);
       } finally {
@@ -151,7 +151,7 @@ export default function Events() {
             const eventDate = event.date ? new Date(event.date) : null;
             const day = eventDate ? eventDate.getDate() : "TBA";
             const month = eventDate ? eventDate.toLocaleDateString("en-US", { month: "short" }).toUpperCase() : "TBA";
-            
+
             return (
               <motion.div
                 key={event.id}
@@ -205,25 +205,67 @@ export default function Events() {
                         Event Full
                       </button>
                     ) : (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Link
-                          to={`/events/${event.id}`}
-                          className="register-btn-modern"
-                        >
-                          Register
-                          <i className="fas fa-arrow-right"></i>
-                        </Link>
-                        {event.eventLink && (
-                          <a
-                            href={event.eventLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="register-btn-modern join-now-btn"
+                      <div className="flex flex-col gap-2 w-full">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Link
+                            to={`/events/${event.id}`}
+                            className="register-btn-modern"
                           >
-                            Join Now
-                            <i className="fas fa-external-link-alt"></i>
-                          </a>
-                        )}
+                            Register
+                            <i className="fas fa-arrow-right"></i>
+                          </Link>
+                          {event.eventLink && (
+                            <a
+                              href={event.eventLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="register-btn-modern join-now-btn"
+                            >
+                              Join Now
+                              <i className="fas fa-external-link-alt"></i>
+                            </a>
+                          )}
+                        </div>
+                        {event.hasPrelims && (() => {
+                          const now = new Date().getTime();
+                          const prelimsDeadline = event.prelimsDeadline ? new Date(event.prelimsDeadline).getTime() : null;
+                          const prelimsExpired = prelimsDeadline && now > prelimsDeadline;
+
+                          return (
+                            <div className="flex flex-col gap-2 mt-2">
+                              {prelimsDeadline && (
+                                <div className="text-xs text-slate-400">
+                                  <i className="fas fa-clock mr-1"></i>
+                                  Prelims Deadline: {new Date(event.prelimsDeadline).toLocaleString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </div>
+                              )}
+                              {prelimsExpired ? (
+                                <button className="register-btn-modern disabled" disabled>
+                                  <i className="fas fa-hourglass-end"></i>
+                                  Prelims Closed
+                                </button>
+                              ) : (
+                                <Link
+                                  to="/exam"
+                                  className="register-btn-modern prelims-btn"
+                                  style={{
+                                    background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                                    borderColor: '#f59e0b'
+                                  }}
+                                >
+                                  <i className="fas fa-pen-fancy"></i>
+                                  Start Prelims
+                                </Link>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>

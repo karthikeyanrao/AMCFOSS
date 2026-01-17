@@ -10,8 +10,68 @@ import {
   serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
+import emailjs from "@emailjs/browser";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../firebase";
+
+const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
+const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
+const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
+console.log(
+  "EmailJS config",
+  EMAILJS_SERVICE_ID,
+  EMAILJS_TEMPLATE_ID,
+  EMAILJS_PUBLIC_KEY
+);
+const buildCalendarLink = (event) => {
+  if (!event?.date) return "https://calendar.google.com/";
+  const startDate = event.date.replace(/-/g, "");
+  const startTime = event.time ? event.time.replace(/:/g, "") + "00" : "000000";
+  const endTime = event.time ? event.time.replace(/:/g, "") + "00" : "235959";
+  const dates = `${startDate}T${startTime}/${startDate}T${endTime}`;
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: event.title || "AMC FOSS Event",
+    details: event.description || "AMC FOSS community event",
+    location: event.eventLink || "AMC FOSS",
+    dates,
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+};
+
+const sendEmailsForEvent = async (event, participants) => {
+  if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+    throw new Error("Email service is not configured. Please set EmailJS environment variables.");
+  }
+
+  const calendarLink = buildCalendarLink(event);
+
+  const tasks = participants
+    .filter((participant) => participant?.email)
+    .map((participant, idx) => {
+      const templateParams = {
+        name: participant.name || "Participant",
+        email: participant.email,
+        event_title: event.title || "AMC FOSS Event",
+        event_date: event.date || "Date TBA",
+        event_time: event.time || "Time TBA",
+        reg_id: participant.registrationId || `${event.id}-${idx + 1}`,
+        google_calendar_link: calendarLink,
+      };
+      return emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        templateParams,
+        EMAILJS_PUBLIC_KEY
+      );
+    });
+
+  if (!tasks.length) {
+    throw new Error("No participants with email addresses found.");
+  }
+
+  await Promise.all(tasks);
+};
 
 export default function OfficeDashboard() {
   const { logout } = useAuth();
@@ -35,6 +95,7 @@ export default function OfficeDashboard() {
   const [editDesc, setEditDesc] = useState("");
   const [editParticipantLimit, setEditParticipantLimit] = useState("");
   const [editEventLink, setEditEventLink] = useState("");
+  const [emailSendingId, setEmailSendingId] = useState(null);
 
   const eventsRef = useMemo(() => collection(db, "events"), []);
   const tasksRef = useMemo(() => collection(db, "tasks"), []);
@@ -161,6 +222,24 @@ export default function OfficeDashboard() {
     if (window.confirm("Are you sure you want to delete this event?")) {
       await deleteDoc(doc(db, "events", id));
       await loadEvents();
+    }
+  };
+
+  const handleNotifyParticipants = async (event) => {
+    const registrations = Array.isArray(event.registrations) ? event.registrations : [];
+    if (!registrations.length) {
+      alert("No participants to notify for this event.");
+      return;
+    }
+    try {
+      setEmailSendingId(event.id);
+      await sendEmailsForEvent(event, registrations);
+      alert(`Emails sent to ${registrations.length} participant${registrations.length > 1 ? "s" : ""}.`);
+    } catch (err) {
+      console.error("Failed to send emails:", err);
+      alert(err.message || "Failed to send emails. Check console for details.");
+    } finally {
+      setEmailSendingId(null);
     }
   };
 
@@ -297,6 +376,13 @@ export default function OfficeDashboard() {
                       >
                         View Participants
                       </button>
+                      <button
+                        onClick={() => handleNotifyParticipants(event)}
+                        disabled={emailSendingId === event.id}
+                        className="rounded-full border border-emerald-400/40 bg-emerald-500/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-200 transition hover:border-emerald-400 hover:bg-emerald-500/30 disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        {emailSendingId === event.id ? "Sending..." : "Notify Participants"}
+                      </button>
                       {event.isActive && (
                         <button
                           onClick={() => startEditing(event)}
@@ -317,7 +403,7 @@ export default function OfficeDashboard() {
               </div>
             </div>
           </motion.div>
-
+         
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}

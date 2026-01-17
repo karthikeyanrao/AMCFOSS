@@ -11,6 +11,7 @@ import MentorDashboard from './pages/MentorDashboard';
 import OfficeDashboard from './pages/OfficeDashboard';
 import Events from './pages/Events';
 import EventRegistration from './pages/EventRegistration';
+import ExamPage from './pages/ExamPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import CustomCursor from './components/CustomCursor';
 import Loader from './components/Loader';
@@ -22,6 +23,61 @@ const App = () => {
   const handleLoadingComplete = () => {
     setIsLoading(false);
   };
+
+  // Disable right-click globally
+  useEffect(() => {
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+      return false;
+    };
+
+    // Block developer tools shortcuts
+    const handleKeyDown = (e) => {
+      // F12 - Developer Tools
+      if (e.key === 'F12') {
+        e.preventDefault();
+        return false;
+      }
+
+      // Ctrl+Shift+I - Inspect Element
+      if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+        e.preventDefault();
+        return false;
+      }
+
+      // Ctrl+Shift+J - Console
+      if (e.ctrlKey && e.shiftKey && e.key === 'J') {
+        e.preventDefault();
+        return false;
+      }
+
+      // Ctrl+Shift+C - Inspect Element
+      if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+        e.preventDefault();
+        return false;
+      }
+
+      // Ctrl+U - View Source
+      if (e.ctrlKey && e.key === 'u') {
+        e.preventDefault();
+        return false;
+      }
+
+      // Ctrl+S - Save Page
+      if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        return false;
+      }
+    };
+
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   return (
     <AuthProvider>
@@ -58,6 +114,7 @@ const App = () => {
           />
           <Route path="/events" element={<Events />} />
           <Route path="/events/:id" element={<EventRegistration />} />
+          <Route path="/exam" element={<ExamPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
