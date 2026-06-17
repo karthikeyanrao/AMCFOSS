@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import AuthLayout from "../components/AuthLayout";
 
@@ -13,11 +13,13 @@ export default function Login() {
 
   // Auto-redirect if user is already logged in and has a role
   useEffect(() => {
-    if (!authLoading && user && role) {
+    if (!authLoading && user) {
       if (role === "mentor") {
         navigate("/mentor", { replace: true });
       } else if (role === "office_bearer") {
         navigate("/office", { replace: true });
+      } else if (!role) {
+        navigate("/select-role", { replace: true });
       }
     }
   }, [user, role, authLoading, navigate]);

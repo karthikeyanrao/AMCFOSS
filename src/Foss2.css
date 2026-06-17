@@ -1992,18 +1992,6 @@ select,
         margin: 0;
         width: 280px;
         max-width: 90vw;
-        transform: translate(-50%, -50%) scale(1) !important;
-    }
-
-    .team-card:not(.active) {
-        display: none !important;
-    }
-
-    .team-card.active {
-        opacity: 1 !important;
-        pointer-events: auto !important;
-        z-index: 10;
-        filter: blur(0) !important;
     }
 
     .active-indicator {
@@ -2280,12 +2268,18 @@ select,
     overflow: hidden;
     border: 3px solid var(--accent-color);
     box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
 }
 
 .contact-profile img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     transition: var(--transition);
 }
 
@@ -2467,12 +2461,18 @@ select,
     overflow: hidden;
     border: 3px solid var(--accent-color);
     box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
 }
 
 .contact-profile img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     transition: var(--transition);
 }
 
@@ -3018,9 +3018,7 @@ select,
         background: transparent;
     }
 
-    .scroll-progress {
-        display: none !important;
-    }
+
 
     /* Prevent horizontal scroll on mobile */
     * {
@@ -3133,7 +3131,7 @@ select,
 /* Scroll Indicator */
 .scroll-indicator {
     position: absolute;
-    bottom: 11rem;
+    bottom: 2.5rem;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
@@ -3597,5 +3595,43 @@ button:hover,
     .join-social-link {
         flex-direction: row;
         justify-content: center;
+    }
+}
+
+
+
+/* Real-time Event Countdown */
+.event-countdown {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    background: rgba(0, 255, 136, 0.1);
+    border: 1px solid rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+    font-family: monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    margin-top: 0.5rem;
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.05);
+    width: fit-content;
+    animation: countdown-pulse 2s infinite ease-in-out;
+}
+
+.event-countdown i {
+    font-size: 0.85rem;
+}
+
+@keyframes countdown-pulse {
+    0%, 100% {
+        opacity: 0.9;
+        box-shadow: 0 0 10px rgba(0, 255, 136, 0.05);
+    }
+    50% {
+        opacity: 1;
+        box-shadow: 0 0 15px rgba(0, 255, 136, 0.15);
+        border-color: rgba(0, 255, 136, 0.4);
     }
 }

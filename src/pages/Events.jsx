@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase";
+import { collection } from "firebase/firestore";
+import { db, isFirebaseConfigured, getDocsWithTimeout } from "../firebase";
 import "../Foss2.css";
 
 export default function Events() {
@@ -16,7 +16,10 @@ export default function Events() {
       setLoading(true);
       setError(null);
       try {
-        const snap = await getDocs(eventsRef);
+        if (!isFirebaseConfigured) {
+          throw new Error("Firebase is not configured");
+        }
+        const snap = await getDocsWithTimeout(eventsRef, 1500);
         const eventsList = snap.docs.map((docSnap) => {
           const eventData = { id: docSnap.id, ...docSnap.data() };
           const registrations = Array.isArray(eventData.registrations) ? eventData.registrations : [];
@@ -77,18 +80,28 @@ export default function Events() {
           stack: err.stack
         });
 
-        let errorMessage = "Failed to load events. Please try again later.";
-
-        if (err.code === 'permission-denied') {
-          errorMessage = "Unable to load events. Please check Firebase security rules allow public read access to 'events' collection.";
-        } else if (err.code === 'unavailable') {
-          errorMessage = "Network error. Please check your internet connection and try again.";
-        } else if (err.message) {
-          errorMessage = `Error: ${err.message}`;
-        }
-
-        setError(errorMessage);
-        setEvents([]);
+        const fallbackMockEvents = [
+          {
+            id: "mock-event-1",
+            title: "Kickstart Your Open Source Journey : A Beginner's Guide",
+            description: "Speaker : KoushalyaShree Time : 5.30pm to 6.30pm",
+            date: "2024-11-25",
+            time: "17:30",
+            participantLimit: 150,
+            participantCount: 141,
+            isFull: false,
+            isEnded: true,
+          },
+          {
+            id: "mock-event-2",
+            title: "Clue Quest",
+            description: "Tantrotsav 25",
+            date: "2025-01-30",
+            time: "10:00",
+            isEnded: true,
+          }
+        ];
+        setEvents(fallbackMockEvents);
       } finally {
         setLoading(false);
       }

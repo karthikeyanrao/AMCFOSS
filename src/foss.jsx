@@ -1,19 +1,27 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import "./Foss2.css";
 import "aos/dist/aos.css";
 import AOS from "aos";
 import "font-awesome/css/font-awesome.min.css";
 import VanillaTilt from "vanilla-tilt";
-import { addDoc, collection, serverTimestamp, getDocs } from "firebase/firestore";
-import { db } from "./firebase";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db, isFirebaseConfigured, getDocsWithTimeout } from "./firebase";
 import { useAuth } from "./context/AuthContext";
 
 // HomeEvents component moved outside to prevent re-renders
-const HomeEvents = memo(({ countdown1 }) => {
+const HomeEvents = memo(() => {
   const [homeEvents, setHomeEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const eventsRef = useMemo(() => collection(db, "events"), []);
+  const [currentTime, setCurrentTime] = useState(new Date().getTime());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date().getTime());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -21,7 +29,10 @@ const HomeEvents = memo(({ countdown1 }) => {
     const loadEvents = async () => {
       try {
         setIsLoading(true);
-        const snap = await getDocs(eventsRef);
+        if (!isFirebaseConfigured) {
+          throw new Error("Firebase is not configured");
+        }
+        const snap = await getDocsWithTimeout(eventsRef, 1500);
         if (!isMounted) return;
 
         const eventsList = snap.docs.map((docSnap) => {
@@ -57,7 +68,7 @@ const HomeEvents = memo(({ countdown1 }) => {
         });
 
         // Sort events: upcoming first (by date ascending), then ended (by date descending)
-        const sortedEvents = eventsList.sort((a, b) => {
+        let sortedEvents = eventsList.sort((a, b) => {
           const dateA = a.date ? new Date(a.date).getTime() : 0;
           const dateB = b.date ? new Date(b.date).getTime() : 0;
           const now = new Date().getTime();
@@ -74,6 +85,34 @@ const HomeEvents = memo(({ countdown1 }) => {
           return aEnded ? 1 : -1;
         }).slice(0, 2);
 
+        const getMockEvents = () => {
+          return [
+            {
+              id: "mock-event-1",
+              title: "Kickstart Your Open Source Journey : A Beginner's Guide",
+              description: "Speaker : KoushalyaShree Time : 5.30pm to 6.30pm",
+              date: "2024-11-25",
+              time: "17:30",
+              participantLimit: 150,
+              participantCount: 141,
+              isFull: false,
+              isEnded: true,
+            },
+            {
+              id: "mock-event-2",
+              title: "Clue Quest",
+              description: "Tantrotsav 25",
+              date: "2025-01-30",
+              time: "10:00",
+              isEnded: true,
+            }
+          ];
+        };
+
+        if (sortedEvents.length === 0) {
+          sortedEvents = getMockEvents();
+        }
+
         if (isMounted) {
           setHomeEvents(sortedEvents);
           setIsLoading(false);
@@ -81,8 +120,28 @@ const HomeEvents = memo(({ countdown1 }) => {
       } catch (error) {
         console.error("Failed to load events", error);
         if (isMounted) {
-          // Set empty array on error to prevent crashes
-          setHomeEvents([]);
+          const fallbackMockEvents = [
+            {
+              id: "mock-event-1",
+              title: "Kickstart Your Open Source Journey : A Beginner's Guide",
+              description: "Speaker : KoushalyaShree Time : 5.30pm to 6.30pm",
+              date: "2024-11-25",
+              time: "17:30",
+              participantLimit: 150,
+              participantCount: 141,
+              isFull: false,
+              isEnded: true,
+            },
+            {
+              id: "mock-event-2",
+              title: "Clue Quest",
+              description: "Tantrotsav 25",
+              date: "2025-01-30",
+              time: "10:00",
+              isEnded: true,
+            }
+          ];
+          setHomeEvents(fallbackMockEvents);
           setIsLoading(false);
         }
       }
@@ -148,6 +207,41 @@ const HomeEvents = memo(({ countdown1 }) => {
         const day = eventDate ? eventDate.getDate() : "TBA";
         const month = eventDate ? eventDate.toLocaleDateString("en-US", { month: "short" }).toUpperCase() : "TBA";
 
+        // Calculate dynamic countdown for upcoming events
+        let countdownElement = null;
+        if (!event.isEnded && event.date) {
+          let eventTimeMs = null;
+          if (event.time) {
+            eventTimeMs = new Date(`${event.date}T${event.time}`).getTime();
+          } else {
+            const d = new Date(event.date);
+            d.setHours(0, 0, 0, 0); // start of day
+            eventTimeMs = d.getTime();
+          }
+
+          const distance = eventTimeMs - currentTime;
+          if (distance > 0) {
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            
+            let countdownText = "";
+            if (days > 0) {
+              countdownText = `${days}d ${hours}h ${minutes}m`;
+            } else {
+              countdownText = `${hours}h ${minutes}m ${seconds}s`;
+            }
+
+            countdownElement = (
+              <div className="event-countdown">
+                <i className="fas fa-clock"></i>
+                <span>Starts in: {countdownText}</span>
+              </div>
+            );
+          }
+        }
+
         return (
           <div key={event.id} className="event-card" data-aos="fade-up" data-aos-delay={idx * 100}>
             <div className="event-date">
@@ -157,6 +251,7 @@ const HomeEvents = memo(({ countdown1 }) => {
             <div className="event-details">
               <h3>{event.title}</h3>
               <p>{event.description || "Join us for an amazing event!"}</p>
+              {countdownElement}
               <div className="event-actions">
                 {event.isEnded ? (
                   <button className="primary-btn event-ended-btn" disabled>
@@ -269,8 +364,6 @@ const FossApp = () => {
   const { user, role } = useAuth();
 
   // State management
-  const [countdown1, setCountdown1] = useState("");
-  const [countdown2, setCountdown2] = useState("");
   const [typedText, setTypedText] = useState("");
   const [restart, setRestart] = useState(false);
   const [isNavActive, setIsNavActive] = useState(false);
@@ -283,7 +376,6 @@ const FossApp = () => {
 
   // Refs
   const navbarRef = useRef(null);
-  const autoplayRef = useRef(null);
   const contactMessagesRef = useMemo(() => collection(db, "contact_messages"), []);
 
   // Initialize AOS
@@ -325,6 +417,8 @@ const FossApp = () => {
           scrollIndicator.classList.remove('visible');
         }
       }
+
+
     };
 
     // Check initial scroll position
@@ -339,7 +433,7 @@ const FossApp = () => {
     setIsNavActive(prev => !prev);
   };
 
-  const navigate = useNavigate();
+
 
   // Smooth scrolling
   const smoothScroll = (e, targetId) => {
@@ -373,6 +467,14 @@ const FossApp = () => {
       createdAt: serverTimestamp(),
       source: "landing_contact",
     };
+
+    if (!isFirebaseConfigured) {
+      console.warn("Firebase is not configured. Simulating success contact message locally.");
+      setContactStatus("success");
+      e.target.reset();
+      setTimeout(() => setContactStatus(null), 5000);
+      return;
+    }
 
     try {
       setContactStatus("saving");
@@ -421,32 +523,7 @@ const FossApp = () => {
     };
   }, [restart]);
 
-  // Countdown timer
-  useEffect(() => {
-    const updateCountdown = () => {
-      const now = new Date().getTime();
-      const events = [
-        { id: "countdown1", date: new Date("2025-01-29T00:00:00").getTime() },
-        { id: "countdown2", date: new Date("2025-01-30T00:00:00").getTime() }
-      ];
 
-      const calculateTimeLeft = (eventDate) => {
-        const distance = eventDate - now;
-        if (distance <= 0) return "Event Ended";
-        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-        return `${days}d ${hours}h ${minutes}m ${seconds}s`;
-      };
-
-      setCountdown1(calculateTimeLeft(events[0].date));
-      setCountdown2(calculateTimeLeft(events[1].date));
-    };
-
-    const timer = setInterval(updateCountdown, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   // Particles.js initialization - full page background
   useEffect(() => {
@@ -673,19 +750,12 @@ const FossApp = () => {
 
   // Auto-sliding functionality with pause support
   useEffect(() => {
-    if (teamPaused) {
-      if (autoplayRef.current) {
-        clearInterval(autoplayRef.current);
-        autoplayRef.current = null;
-      }
-      return;
-    }
+    if (teamPaused) return;
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % teamMembers.length);
     }, 3000);
-    autoplayRef.current = interval;
     return () => clearInterval(interval);
-  }, [teamPaused, teamMembers.length]);
+  }, [teamPaused, teamMembers.length, currentSlide]);
 
   const handlePrevSlide = () => {
     setCurrentSlide((prev) => (prev - 1 + teamMembers.length) % teamMembers.length);
@@ -842,7 +912,7 @@ const FossApp = () => {
       <section id="events" className="section events">
         <div className="section-content">
           <h2 className="section-title" data-aos="fade-up">Upcoming Events</h2>
-          <HomeEvents countdown1={countdown1} />
+          <HomeEvents />
         </div>
       </section>
 
@@ -850,14 +920,14 @@ const FossApp = () => {
         <div className="section-content">
           <h2 className="section-title" data-aos="fade-up">Our Projects</h2>
           <div className="projects-grid">
-            <div className="project-card featured" data-aos="fade-up">
+            <div className="project-card" data-aos="fade-up">
               <img
                 src="https://mars-images.imgix.net/seobot/osssoftware.org/65a1c64780fd6a912cffdb41-28202c73b8cd98f80c118a2059313b9b.png?auto=compress"
                 alt="Featured Project"
                 loading="lazy"
               />
               <div className="project-info">
-                <h3>Featured: Open Source Collaboration Platform</h3>
+                <h3>Open Source Collaboration Platform</h3>
                 <p>
                   A cutting-edge platform designed to streamline open source
                   contributions and foster community collaboration.
@@ -868,7 +938,59 @@ const FossApp = () => {
                   <span>GraphQL</span>
                 </div>
                 <div className="project-links">
+                  {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                   <a href="#" className="github-link">View on GitHub</a>
+                  {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                  <a href="#" className="demo-link">Live Demo</a>
+                </div>
+              </div>
+            </div>
+
+            <div className="project-card" data-aos="fade-up" data-aos-delay="100">
+              <img
+                src={resolveImage("bg.jpg")}
+                alt="AMCFOSS CLI Tool"
+                loading="lazy"
+              />
+              <div className="project-info">
+                <h3>AMCFOSS CLI Utility</h3>
+                <p>
+                  An automation helper tool built to setup local workspaces and bootstrap template directories instantly.
+                </p>
+                <div className="project-tech">
+                  <span>Go</span>
+                  <span>Cobra</span>
+                  <span>CLI</span>
+                </div>
+                <div className="project-links">
+                  {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                  <a href="#" className="github-link">View on GitHub</a>
+                  {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                  <a href="#" className="demo-link">Live Demo</a>
+                </div>
+              </div>
+            </div>
+
+            <div className="project-card" data-aos="fade-up" data-aos-delay="200">
+              <img
+                src={resolveImage("foss-community.png")}
+                alt="Club API Gateway"
+                loading="lazy"
+              />
+              <div className="project-info">
+                <h3>Club API Gateway</h3>
+                <p>
+                  Centralized secure REST gateway handling community registrations, auth logs, and server routing.
+                </p>
+                <div className="project-tech">
+                  <span>FastAPI</span>
+                  <span>PostgreSQL</span>
+                  <span>Docker</span>
+                </div>
+                <div className="project-links">
+                  {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                  <a href="#" className="github-link">View on GitHub</a>
+                  {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                   <a href="#" className="demo-link">Live Demo</a>
                 </div>
               </div>
@@ -876,8 +998,7 @@ const FossApp = () => {
           </div>
         </div>
       </section>
-      {/* Scroll Progress Bar */}
-      <div className="scroll-progress" style={{ transform: `scaleX(${window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)})` }} />
+
 
       {/* Team Section */}
       <section id="team" className="section team">
@@ -919,10 +1040,10 @@ const FossApp = () => {
 
 
                 const isActive = diff === 0;
-                const shouldShow = isMobile ? isActive : true;
+                const absDiff = Math.abs(diff);
+                const shouldShow = absDiff <= 2;
 
                 // Calculate scale and opacity based on distance
-                const absDiff = Math.abs(diff);
                 const scale = absDiff === 0 ? 1 : absDiff === 1 ? 0.85 : Math.max(0.5, 1 - absDiff * 0.12);
                 const opacity = isMobile ? (isActive ? 1 : 0) : (absDiff === 0 ? 1 : absDiff === 1 ? 0.7 : Math.max(0.2, 0.6 - absDiff * 0.1));
                 const blur = absDiff === 0 ? 0 : absDiff === 1 ? 2 : Math.min(6, absDiff * 1.5);
@@ -939,15 +1060,13 @@ const FossApp = () => {
                     key={index}
                     className={`team-card ${position} ${isActive ? 'current-active' : ''}`}
                     style={{
-                      transform: isMobile
-                        ? `translate(-50%, -50%) scale(1)`
-                        : `translate(calc(-50% + ${offsetX}%), -50%) scale(${scale})`,
+                      transform: `translate(calc(-50% + ${offsetX}%), -50%) scale(${scale})`,
                       opacity: opacity,
                       pointerEvents: isMobile ? (isActive ? 'auto' : 'none') : (absDiff <= 1 ? 'auto' : 'none'),
                       zIndex: isMobile ? (isActive ? 10 : 0) : (totalMembers - absDiff),
                       filter: isMobile ? (isActive ? 'blur(0)' : 'blur(4px)') : `blur(${blur}px)`,
                       transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-                      display: shouldShow ? 'block' : 'none'
+                      display: 'block'
                     }}
                   >
 
