@@ -20,21 +20,20 @@ const Loader = ({ onLoadingComplete }) => {
                             if (onLoadingComplete) {
                                 onLoadingComplete();
                             }
-                        }, 500);
+                        }, 250);
                         return 100;
                     }
                     // Faster at the start, slower near the end for realistic feel
-                    const increment = prev < 50 ? 2 : prev < 90 ? 1.5 : 0.5;
+                    const increment = prev < 50 ? 8 : prev < 90 ? 6 : 4;
                     return Math.min(prev + increment, 100);
                 });
-            }, 30); // Update every 30ms
+            }, 16); // Update every 16ms (roughly 60fps)
         };
 
-        // Start loading after a small delay
-        const timeout = setTimeout(startLoading, 100);
+        // Start loading immediately
+        startLoading();
 
         return () => {
-            clearTimeout(timeout);
             if (interval) clearInterval(interval);
         };
     }, [onLoadingComplete]);
@@ -47,7 +46,6 @@ const Loader = ({ onLoadingComplete }) => {
             animate={{ opacity: isComplete ? 0 : 1 }}
             transition={{ duration: 0.5 }}
             className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#1a1a2e]"
-            style={{ display: isComplete ? 'none' : 'flex' }}
         >
             {/* Background effects */}
             <div className="absolute inset-0">
